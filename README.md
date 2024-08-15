@@ -1,3 +1,5 @@
+!!! MAIN 레포지터리 입니다 !!!
+
 For codeIt demo Day!
 
 # 프로젝트 개요
