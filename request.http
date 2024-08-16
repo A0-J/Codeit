@@ -1,0 +1,54 @@
+#/api/groups/{groupId}/posts
+POST http://localhost:3000/api/groups/123/posts
+Content-Type: application/json
+
+{
+  "nickname": "JohnDoe",
+  "title": "My First Post",
+  "content": "This is the content of the post.",
+  "postPassword": "1234",
+  "groupPassword": "abcd",
+  "imageUrl": "http://example.com/image.png",
+  "tags": ["tag1", "tag2"],
+  "location": "Seoul",
+  "moment": "2024-02-21",
+  "isPublic": true
+}
+
+
+###
+# /api/groups/{groupId}/posts
+# 게시글 목록 조회 - 최신 게시글 기준
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 댓글 수 많은 순으로 정렬
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=mostCommented&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 좋아요 수 많은 순으로 정렬
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=mostLiked&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 키워드로 검색
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&keyword=First&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 비공개 게시글 포함
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&isPublic=false
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 페이지와 페이지 사이즈 조정
+GET http://localhost:3000/api/groups/123/posts?page=2&pageSize=5&sortBy=latest&isPublic=true
+Content-Type: application/json
+
