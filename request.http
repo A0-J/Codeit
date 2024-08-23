@@ -1,0 +1,288 @@
+#/api/groups/{groupId}/posts
+POST http://localhost:3000/api/groups/123/posts
+Content-Type: application/json
+
+{
+  "nickname": "JaneDoe",
+  "title": "A Unique Post Title",
+  "content": "This is the content of a new and unique post.",
+  "postPassword": "5678",
+  "groupPassword": "abcd",
+  "imageUrl": "http://example.com/image3.png",
+  "tags": ["tag3", "tag4"],
+  "location": "Incheon",
+  "moment": "2024-03-02",
+  "isPublic": true
+}
+
+
+###
+# /api/groups/{groupId}/posts
+# 게시글 목록 조회 - 최신 게시글 기준
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 댓글 수 많은 순으로 정렬
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=mostCommented&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 좋아요 수 많은 순으로 정렬
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=mostLiked&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 키워드로 검색
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&keyword=First&isPublic=true
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 비공개 게시글 포함
+GET http://localhost:3000/api/groups/123/posts?page=1&pageSize=10&sortBy=latest&isPublic=false
+Content-Type: application/json
+
+###
+
+# 게시글 목록 조회 - 페이지와 페이지 사이즈 조정
+GET http://localhost:3000/api/groups/123/posts?page=2&pageSize=5&sortBy=latest&isPublic=true
+Content-Type: application/json
+
+
+###
+
+#게시글 삭제
+DELETE http://localhost:3000/api/posts/66c6f159d9dc834ed14aa1af
+Content-Type: application/json
+
+{
+  "postPassword": "5678"
+}
+
+### 게시글 상세 정보 조회
+GET http://localhost:3000/api/posts/66c6096563c7f2622555682f
+Content-Type: application/json
+
+###게시글 조회 권한 확인### 
+###비밀번호 확인 성공 예제
+
+POST http://localhost:3000/api/posts/66c6096563c7f2622555682f/verify-password
+Content-Type: application/json
+
+{
+  "password": "1234"
+}
+
+### 비밀번호 확인 실패 예제 (비밀번호 틀림)
+
+POST http://localhost:3000/api/posts/66c6096563c7f2622555682f/verify-password
+Content-Type: application/json
+
+{
+  "password": "wrong_password"
+}
+
+### 비밀번호 확인 실패 예제 (비밀번호 없음)
+
+POST http://localhost:3000/api/posts/66c6096563c7f2622555682f/verify-password
+Content-Type: application/json
+
+{
+  "password": ""
+}
+
+### 게시글 공감하기 성공 예제
+
+POST http://localhost:3000/api/posts/66c6096563c7f2622555682f/like
+Content-Type: application/json
+
+
+### 게시글 공감하기 실패 예제 (존재하지 않는 게시글)
+POST http://localhost:3000/api/posts/000000000000000000000000/like
+Content-Type: application/json
+
+###서버오류
+
+POST http://localhost:3000/api/posts/invalidId/like
+Content-Type: application/json
+
+###게시글 공개 여부 API
+GET http://localhost:3000/api/posts/66c6096563c7f2622555682f/is-public
+Content-Type: application/json
+
+###존재하지 않는 게시글 일때
+GET http://localhost:3000/api/posts/000000000000000000000000/is-public
+Content-Type: application/json
+
+###유효하지 않은 ID 형식
+GET http://localhost:3000/api/posts/invalidId/is-public
+Content-Type: application/json
+
+###댓글 등록 성공
+POST http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments
+Content-Type: application/json
+
+{
+    "nickname": "JaneDoe",
+    "content": "This is a comment!",
+    "password": "1234"
+}
+###댓글 등록 실패
+POST http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments
+Content-Type: application/json
+
+{
+    "nickname": "JaneDoe",
+    "content": "This is a comment!"
+}
+###댓글 조회
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10
+Content-Type: application/json
+
+###같은 게시글의 특정아이디 이후 댓글 조회
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10&commentId=123456789012345678901234
+Content-Type: application/json
+
+### 유효하지 않은 commentId (잘못된 ObjectId 형식)
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10&commentId=invalidcommentid
+Content-Type: application/json
+### 댓글 수정 요청 (성공)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "alice123"
+}
+
+### 비밀번호 오류 (비밀번호가 틀린 경우)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "wrongpassword"
+}
+
+### 댓글 존재하지 않음 (존재하지 않는 댓글 ID)
+PUT http://localhost:3000/api/comments/64a1e2f3b4c5d6e7f8g9h0i2j3
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "alice123"
+}
+
+### 잘못된 요청 형식 (필수 필드 누락)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment."
+    // password 필드가 누락됨
+}
+
+### 댓글 삭제 요청 (성공)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    "password": "1234"
+}
+
+### 비밀번호 오류 (비밀번호가 틀린 경우)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    "password": "wrongpassword"
+}
+
+### 댓글 존재하지 않음 (존재하지 않는 댓글 ID)
+DELETE http://localhost:3000/api/comments/64a1e2f3b4c5d6e7f8g9h0i2j3
+Content-Type: application/json
+
+{
+    "password": "correctpassword"
+}
+
+### 잘못된 요청 형식 (비밀번호 필드 누락)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    // password 필드가 누락됨
+}
+
+
+
+
+
+
+
+
+
+
+
+###유저기능
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "testpassword"
+}
+### 사용자 로그인
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+### 로그인 후 사용하는 거
+GET http://localhost:3000/api/users/me
+Authorization: Bearer <사용자 로그인 토큰>
+Content-Type: application/json
+###
+
+### 사용자 정보 조회
+GET http://localhost:3000/api/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+Content-Type: application/json
+
+### 비밀번호 변경
+PATCH http://localhost:3000/api/users/me/password
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+
+{
+  "oldPassword": "testpassword",
+  "newPassword": "newpassword123"
+}
+
+### 사용자 정보 업데이트
+PATCH http://localhost:3000/api/users/me
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+
+{
+  "username": "newusername",
+  "email": "newemail@example.com",
+  "profilePicture": "http://example.com/newimage.png"
+}
+
+### 사용자 로그아웃
+POST http://localhost:3000/api/users/logout
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
