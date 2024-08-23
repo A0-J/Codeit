@@ -30,6 +30,14 @@ commentsRouter.route('/posts/:postId/comments')
             // 에러 처리
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
-    });
+    })
+    .get(async (req, res)=>{
+        try{
+
+        }
+        catch(error){
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+        }
+    })
 
 export default commentsRouter;

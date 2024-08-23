@@ -140,3 +140,57 @@ Content-Type: application/json
     "content": "This is a comment!"
 }
 
+###유저기능
+POST http://localhost:3000/api/users/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "password": "testpassword"
+}
+### 사용자 로그인
+POST http://localhost:3000/api/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpassword"
+}
+
+### 로그인 후 사용하는 거
+GET http://localhost:3000/api/users/me
+Authorization: Bearer <사용자 로그인 토큰>
+Content-Type: application/json
+###
+
+### 사용자 정보 조회
+GET http://localhost:3000/api/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+Content-Type: application/json
+
+### 비밀번호 변경
+PATCH http://localhost:3000/api/users/me/password
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+
+{
+  "oldPassword": "testpassword",
+  "newPassword": "newpassword123"
+}
+
+### 사용자 정보 업데이트
+PATCH http://localhost:3000/api/users/me
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
+
+{
+  "username": "newusername",
+  "email": "newemail@example.com",
+  "profilePicture": "http://example.com/newimage.png"
+}
+
+### 사용자 로그아웃
+POST http://localhost:3000/api/users/logout
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Yzg4ZTczNDNhOTgzYTk0ZWMyMjUxMiIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3MjQ0MjAwNzYsImV4cCI6MTcyNDQyMzY3Nn0.-RBhr2IohPXC7jzrMdDGs7tGqzqFh6mGXuSeseMVrnQ
