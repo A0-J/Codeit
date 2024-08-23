@@ -139,6 +139,98 @@ Content-Type: application/json
     "nickname": "JaneDoe",
     "content": "This is a comment!"
 }
+###댓글 조회
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10
+Content-Type: application/json
+
+###같은 게시글의 특정아이디 이후 댓글 조회
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10&commentId=123456789012345678901234
+Content-Type: application/json
+
+### 유효하지 않은 commentId (잘못된 ObjectId 형식)
+GET http://localhost:3000/api/posts/66c7c417e86dce4092081111/comments?page=1&pageSize=10&commentId=invalidcommentid
+Content-Type: application/json
+### 댓글 수정 요청 (성공)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "alice123"
+}
+
+### 비밀번호 오류 (비밀번호가 틀린 경우)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "wrongpassword"
+}
+
+### 댓글 존재하지 않음 (존재하지 않는 댓글 ID)
+PUT http://localhost:3000/api/comments/64a1e2f3b4c5d6e7f8g9h0i2j3
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment.",
+    "password": "alice123"
+}
+
+### 잘못된 요청 형식 (필수 필드 누락)
+PUT http://localhost:3000/api/comments/66c7c417e86dce4092081114
+Content-Type: application/json
+
+{
+    "nickname": "UpdatedNickname",
+    "content": "Updated content for the comment."
+    // password 필드가 누락됨
+}
+
+### 댓글 삭제 요청 (성공)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    "password": "1234"
+}
+
+### 비밀번호 오류 (비밀번호가 틀린 경우)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    "password": "wrongpassword"
+}
+
+### 댓글 존재하지 않음 (존재하지 않는 댓글 ID)
+DELETE http://localhost:3000/api/comments/64a1e2f3b4c5d6e7f8g9h0i2j3
+Content-Type: application/json
+
+{
+    "password": "correctpassword"
+}
+
+### 잘못된 요청 형식 (비밀번호 필드 누락)
+DELETE http://localhost:3000/api/comments/66c7c46bea8dee7160cd2546
+Content-Type: application/json
+
+{
+    // password 필드가 누락됨
+}
+
+
+
+
+
+
+
+
+
+
 
 ###유저기능
 POST http://localhost:3000/api/users/register
