@@ -1,4 +1,4 @@
-!!! SEO_WON 레포지터리 입니다 !!!
+!!! ayeong 레포지터리 입니다 !!!
 
 For codeIt demo Day!
 
