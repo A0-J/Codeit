@@ -34,19 +34,33 @@ postRouter.route('/groups/:groupId/posts')
                 content,
                 postPassword,
                 groupPassword,
-                imageUrl,
-                tags,
-                location,
-                moment,
+                imageUrl: imageUrl || '',  // 기본값 설정
+                tags: tags || [],  // 기본값 설정
+                location: location || '',  // 기본값 설정
+                moment: moment ? new Date(moment) : new Date(),  // moment를 Date로 변환
                 isPublic,
                 likeCount: 0,
                 commentCount: 0,
             });
 
-            await newPost.save();
+            const savedPost = await newPost.save();
 
             // 성공적으로 생성되었음을 나타내는 200 응답
-            return res.status(200).json(newPost);
+            return res.status(200).json({
+                id: savedPost._id,
+                groupId: savedPost.groupId,
+                nickname: savedPost.nickname,
+                title: savedPost.title,
+                content: savedPost.content,
+                imageUrl: savedPost.imageUrl,
+                tags: savedPost.tags,
+                location: savedPost.location,
+                moment: savedPost.moment.toISOString().split('T')[0],  // 날짜 형식 맞추기
+                isPublic: savedPost.isPublic,
+                likeCount: savedPost.likeCount,
+                commentCount: savedPost.commentCount,
+                createdAt: savedPost.createdAt.toISOString(),
+            });
         } catch (error) {
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
@@ -91,11 +105,24 @@ postRouter.route('/groups/:groupId/posts')
                 .skip((pageNumber - 1) * pageSizeNumber)
                 .limit(pageSizeNumber);
 
+            // 데이터 변환
+            const formattedPosts = posts.map(post => ({
+                id: post._id,
+                name: post.title,  // assuming 'title' is used as 'name' here
+                imageUrl: post.imageUrl || '',  // assuming there's an 'imageUrl' field
+                isPublic: post.isPublic,
+                likeCount: post.likeCount,
+                badgeCount: post.badgeCount || 0,  // defaulting to 0 if not present
+                postCount: post.postCount || 0,    // defaulting to 0 if not present
+                createdAt: post.createdAt.toISOString(),
+                introduction: post.introduction || ''  // defaulting to empty string if not present
+            }));
+
             return res.status(200).json({
                 currentPage: pageNumber,
                 totalPages: totalPages,
                 totalItemCount: totalItemCount,
-                data: posts
+                data: formattedPosts
             });
         } catch (error) {
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
