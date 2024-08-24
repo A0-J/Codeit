@@ -1,0 +1,91 @@
+GET http://localhost:3000/hello
+
+###
+
+POST http://localhost:3000/groups
+Content-Type: application/json
+
+{
+    "name": "string",
+    "password": "string",
+    "imageUrl": "string",
+    "isPublic": true,
+    "introduction": "string"
+}
+
+###
+
+### 그룹 등록 (POST /api/groups)
+POST http://localhost:3000/api/groups
+Content-Type: application/json
+
+{
+    "name": "Study Group",
+    "password": "securepassword",
+    "imageUrl": "http://example.com/image.jpg",
+    "isPublic": true,
+    "introduction": "A group for studying together."
+}
+
+###
+
+### 그룹 상세 정보 조회 (GET /api/groups/:groupId)
+GET http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+
+###
+
+### 그룹 수정 (PUT /api/groups/:groupId)
+PUT http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+Content-Type: application/json
+
+{
+    "name": "Updated Study Group",
+    "password": "securepassword",
+    "imageUrl": "http://example.com/new-image.jpg",
+    "isPublic": false,
+    "introduction": "Updated introduction for the study group."
+}
+
+###
+
+### 그룹 삭제 (DELETE /api/groups/:groupId)
+DELETE http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+Content-Type: application/json
+
+{
+    "password": "securepassword"
+}
+
+###
+
+### 그룹 조회 권한 확인 (비밀번호 확인) (POST /api/groups/:groupId/verify-password)
+POST http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/verify-password
+Content-Type: application/json
+
+{
+    "password": "securepassword"
+}
+
+###
+
+### 그룹 공감하기 (POST /api/groups/:groupId/like)
+POST http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/like
+
+###
+
+### 그룹 공개 여부 확인 (GET /api/groups/:groupId/public-status)
+GET http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/public-status
+
+###
+
+### 이미지 업로드 (POST /api/images)
+
+POST http://localhost:3000/api/image
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="example.png"
+Content-Type: image/png
+
+data\img\hello.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
