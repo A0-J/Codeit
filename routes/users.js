@@ -1,7 +1,12 @@
 import express from 'express';
 import User from '../models/user.js';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../env.js'; // env.js에서 JWT_SECRET 가져오기
+
+// .env 파일에서 환경 변수 로드
+import dotenv from 'dotenv';
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const userRouter = express.Router();
 
@@ -10,16 +15,13 @@ userRouter.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // 필수 필드 검증
     if (!username || !email || !password) {
       return res.status(400).json({ message: "필수 필드를 입력해 주세요." });
     }
 
-    // 사용자 생성
     const user = new User({ username, email, password });
     await user.save();
 
-    // 성공적으로 사용자 생성됨을 응답
     return res.status(201).json({ message: "사용자 등록 성공" });
   } catch (error) {
     return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
@@ -31,24 +33,20 @@ userRouter.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // 필수 필드 검증
     if (!username || !password) {
       return res.status(400).json({ message: "필수 필드를 입력해 주세요." });
     }
 
-    // 사용자 찾기
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(401).json({ message: "사용자를 찾을 수 없습니다." });
     }
 
-    // 비밀번호 검증
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "비밀번호가 틀렸습니다." });
     }
 
-    // JWT 토큰 생성
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
 
     return res.status(200).json({ token });
@@ -63,7 +61,6 @@ userRouter.get('/me', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ message: "인증이 필요합니다." });
 
-    // JWT 토큰 검증
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
@@ -93,11 +90,9 @@ userRouter.patch('/me/password', async (req, res) => {
     const { oldPassword, newPassword } = req.body;
     if (!oldPassword || !newPassword) return res.status(400).json({ message: "필수 필드를 입력해 주세요." });
 
-    // 기존 비밀번호 검증
     const isMatch = await user.comparePassword(oldPassword);
     if (!isMatch) return res.status(401).json({ message: "기존 비밀번호가 틀렸습니다." });
 
-    // 비밀번호 변경
     user.password = newPassword;
     await user.save();
 
@@ -119,12 +114,10 @@ userRouter.patch('/me', async (req, res) => {
 
     const { username, email, profilePicture } = req.body;
 
-    // 필수 필드 검증
     if (!username && !email && !profilePicture) {
       return res.status(400).json({ message: "업데이트할 필드를 입력해 주세요." });
     }
 
-    // 사용자 정보 업데이트
     if (username) user.username = username;
     if (email) user.email = email;
     if (profilePicture) user.profilePicture = profilePicture;
