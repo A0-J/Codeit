@@ -78,14 +78,5 @@ GET http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/public-status
 
 ###
 
-### 이미지 업로드 (POST /api/images)
-
-POST http://localhost:3000/api/image
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
-
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="image"; filename="example.png"
-Content-Type: image/png
-
-data\img\hello.png
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
+### 이미지 업로드 (POST /api/images) 터미널에서 입력
+curl -X POST http://localhost:3000/api/image -F "image=@data\\img\\hello.png"
