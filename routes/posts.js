@@ -81,12 +81,10 @@ postRouter.route('/groups/:groupId/posts')
             }
 
             // 필터링 조건
-            const filterConditions = {
-                groupId: groupIdNumber,
-                isPublic: isPublicBoolean,
-                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
-            };
-
+        const filterConditions = {
+            groupId: groupIdNumber,
+            title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
+        };
             // 정렬 조건
             let sortConditions;
             if (sortBy === 'latest') {
