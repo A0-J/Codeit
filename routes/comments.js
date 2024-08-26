@@ -95,14 +95,14 @@ commentsRouter.route('/comments/:commentId')
             const { nickname, content, password } = req.body;
 
             // 모든 필드 검증
-            if (!nickname || !content || !password) {
+            if (!nickname || !content || !password||!isValidObjectId(commentId)) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
             // commentId가 유효한 ObjectId인지 확인
-            if (!isValidObjectId(commentId)) {
-                return res.status(400).json({ message: "유효하지 않은 commentId입니다" });
-            }
+            //if (!isValidObjectId(commentId)) {
+            //    return res.status(400).json({ message: "유효하지 않은 commentId입니다" });
+            //}
 
             // 댓글 조회
             const comment = await Comment.findOne({ _id: commentId });
@@ -133,24 +133,21 @@ commentsRouter.route('/comments/:commentId')
             // 에러 처리
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
-    });
-
-// 댓글 삭제 요청 처리
-commentsRouter.route('/comments/:commentId')
+    })
     .delete(async (req, res) => {
         try {
             const { commentId } = req.params;
             const { password } = req.body;
 
             // password 필드 검증
-            if (!password) {
+            if (!password||!isValidObjectId(commentId)) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
             // commentId가 유효한 ObjectId인지 확인
-            if (!isValidObjectId(commentId)) {
-                return res.status(400).json({ message: "유효하지 않은 commentId입니다" });
-            }
+            //if (!isValidObjectId(commentId)) {
+            //    return res.status(400).json({ message: "유효하지 않은 commentId입니다" });
+            //}
 
             // 댓글 조회
             const comment = await Comment.findOne({ _id: commentId });

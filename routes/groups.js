@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
             introduction
         } = req.body;
 
-        // 필수 필드가 누락된 경우 400 에러 반환
+        // 필수 필드 검증
         if (!name || !password || typeof isPublic !== 'boolean') {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
@@ -27,17 +27,106 @@ router.post('/', async (req, res) => {
             imageUrl: imageUrl || null,
             isPublic,
             introduction: introduction || "",
+            likeCount: 0,
+            badges: [],
+            postCount: 0
         });
 
-        await newGroup.save();
+        // 그룹 저장
+        const savedGroup = await newGroup.save();
 
         // 201 Created 응답 반환
-        return res.status(201).json(newGroup);
+        return res.status(201).json({
+            id: savedGroup._id,
+            name: savedGroup.name,
+            imageUrl: savedGroup.imageUrl,
+            isPublic: savedGroup.isPublic,
+            likeCount: savedGroup.likeCount,
+            badges: savedGroup.badges,
+            postCount: savedGroup.postCount,
+            createdAt: savedGroup.createdAt,
+            introduction: savedGroup.introduction
+        });
+    } catch (error) {
+        return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+    }
+});
+// 그룹 목록 조회 API
+router.get('/', async (req, res) => {
+    try {
+        // 요청 파라미터 추출
+        const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic } = req.query;
+
+        // 페이지와 페이지 크기 파싱
+        const pageNumber = parseInt(page, 10);
+        const pageSizeNumber = parseInt(pageSize, 10);
+
+        // 유효성 검증
+        if (isNaN(pageNumber) || isNaN(pageSizeNumber)) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        // 정렬 기준 설정
+        let sortOption;
+        switch (sortBy) {
+            case 'latest':
+                sortOption = { createdAt: -1 };
+                break;
+            case 'mostPosted':
+                sortOption = { postCount: -1 };
+                break;
+            case 'mostLiked':
+                sortOption = { likeCount: -1 };
+                break;
+            case 'mostBadge':
+                sortOption = { badgeCount: -1 };
+                break;
+            default:
+                return res.status(400).json({ message: "잘못된 정렬 기준입니다" });
+        }
+
+        // 필터링 조건 설정
+        const query = {};
+        if (keyword) {
+            query.name = { $regex: keyword, $options: 'i' }; // 대소문자 구분 없는 검색
+        }
+        if (isPublic !== undefined) {
+            query.isPublic = isPublic === 'true';
+        }
+
+        // 총 아이템 수 조회
+        const totalItemCount = await Group.countDocuments(query);
+
+        // 그룹 목록 조회
+        const groups = await Group.find(query)
+            .sort(sortOption)
+            .skip((pageNumber - 1) * pageSizeNumber)
+            .limit(pageSizeNumber);
+
+        // 총 페이지 수 계산
+        const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
+
+        // 200 OK 응답 반환
+        return res.status(200).json({
+            currentPage: pageNumber,
+            totalPages,
+            totalItemCount,
+            data: groups.map(group => ({
+                id: group._id,
+                name: group.name,
+                imageUrl: group.imageUrl,
+                isPublic: group.isPublic,
+                likeCount: group.likeCount,
+                badgeCount: group.badges.length,
+                postCount: group.postCount,
+                createdAt: group.createdAt,
+                introduction: group.introduction
+            }))
+        });
     } catch (error) {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-
 // 그룹 수정 API
 router.put('/:groupId', async (req, res) => {
     try {
@@ -50,17 +139,20 @@ router.put('/:groupId', async (req, res) => {
             introduction
         } = req.body;
 
-        // 필수 필드가 누락된 경우 400 에러 반환
+        // 필수 필드 검증
         if (!name || !password || typeof isPublic !== 'boolean') {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
+        // 그룹 조회
         const group = await Group.findById(groupId);
 
+        // 그룹이 존재하지 않는 경우
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
         }
 
+        // 비밀번호 확인
         if (group.password !== password) {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
@@ -71,9 +163,21 @@ router.put('/:groupId', async (req, res) => {
         group.isPublic = isPublic;
         group.introduction = introduction || group.introduction;
 
-        await group.save();
+        // 수정된 그룹 저장
+        const updatedGroup = await group.save();
 
-        return res.status(200).json(group);
+        // 200 OK 응답 반환
+        return res.status(200).json({
+            id: updatedGroup._id,
+            name: updatedGroup.name,
+            imageUrl: updatedGroup.imageUrl,
+            isPublic: updatedGroup.isPublic,
+            likeCount: updatedGroup.likeCount,
+            badges: updatedGroup.badges,
+            postCount: updatedGroup.postCount,
+            createdAt: updatedGroup.createdAt,
+            introduction: updatedGroup.introduction
+        });
     } catch (error) {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
@@ -86,7 +190,10 @@ router.delete('/:groupId', async (req, res) => {
         const { password } = req.body;
 
         const group = await Group.findById(groupId);
-
+        // 필수 필드 검증
+        if (!password) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
         }
@@ -108,25 +215,28 @@ router.delete('/:groupId', async (req, res) => {
 router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
+        // 그룹 조회
+        const group = await Group.findById(groupId);
 
         // groupId를 ObjectId로 변환
-        if (!mongoose.Types.ObjectId.isValid(groupId)) {
+        if (!mongoose.Types.ObjectId.isValid(groupId)||!group) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        const group = await Group.findById(groupId);
+        
+        // 그룹이 존재하지 않는 경우
+        //if (!group) {
+        //    return res.status(404).json({ message: "존재하지 않습니다" });
+        //}
 
-        if (!group) {
-            return res.status(404).json({ message: "존재하지 않습니다" });
-        }
-
+        // 그룹 정보 반환
         return res.status(200).json({
             id: group._id,
             name: group.name,
             imageUrl: group.imageUrl,
             isPublic: group.isPublic,
             likeCount: group.likeCount,
-            badgeCount: group.badges.length,  // badges 배열의 길이로 badgeCount 계산
+            badges: group.badges, // badges 배열을 직접 반환
             postCount: group.postCount,
             createdAt: group.createdAt,
             introduction: group.introduction
@@ -145,9 +255,9 @@ router.post('/:groupId/verify-password', async (req, res) => {
 
         const group = await Group.findById(groupId);
 
-        if (!group) {
-            return res.status(404).json({ message: "존재하지 않습니다" });
-        }
+        // if (!group) {
+        //    return res.status(404).json({ message: "존재하지 않습니다" });
+        //}
 
         if (group.password !== password) {
             return res.status(401).json({ message: "비밀번호가 틀렸습니다" });
@@ -182,15 +292,15 @@ router.post('/:groupId/like', async (req, res) => {
 });
 
 // 그룹 공개 여부 확인 API
-router.get('/:groupId/public-status', async (req, res) => {
+router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
 
         const group = await Group.findById(groupId);
 
-        if (!group) {
-            return res.status(404).json({ message: "존재하지 않습니다" });
-        }
+        //if (!group) {
+        //    return res.status(404).json({ message: "존재하지 않습니다" });
+        //}
 
         return res.status(200).json({ id: group.id, isPublic: group.isPublic });
     } catch (error) {

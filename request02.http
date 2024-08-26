@@ -27,15 +27,14 @@ Content-Type: application/json
     "introduction": "A group for studying together."
 }
 
-###
-
-### 그룹 상세 정보 조회 (GET /api/groups/:groupId)
-GET http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+### 그룹 목록 조회
+GET http://localhost:3000/api/groups
+Content-Type: application/json
 
 ###
 
 ### 그룹 수정 (PUT /api/groups/:groupId)
-PUT http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+PUT http://localhost:3000/api/groups/66cc499f8c59a2b310141f2f
 Content-Type: application/json
 
 {
@@ -49,17 +48,20 @@ Content-Type: application/json
 ###
 
 ### 그룹 삭제 (DELETE /api/groups/:groupId)
-DELETE http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6
+DELETE http://localhost:3000/api/groups/66cc49378c59a2b310141f2c
 Content-Type: application/json
 
 {
     "password": "securepassword"
 }
 
-###
+
+### 그룹 상세 정보 조회 (GET /api/groups/:groupId)
+GET http://localhost:3000/api/groups/66cc48c2a2253bf6c312a03a
+
 
 ### 그룹 조회 권한 확인 (비밀번호 확인) (POST /api/groups/:groupId/verify-password)
-POST http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/verify-password
+POST http://localhost:3000/api/groups/66cc48c2a2253bf6c312a03a/verify-password
 Content-Type: application/json
 
 {
@@ -69,14 +71,15 @@ Content-Type: application/json
 ###
 
 ### 그룹 공감하기 (POST /api/groups/:groupId/like)
-POST http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/like
+POST http://localhost:3000/api/groups/66cc48c2a2253bf6c312a03a/like
 
 ###
 
 ### 그룹 공개 여부 확인 (GET /api/groups/:groupId/public-status)
-GET http://localhost:3000/api/groups/66c9ced5f42b8ab1cc854eb6/public-status
+GET http://localhost:3000/api/groups/66cc48c2a2253bf6c312a03a/is-public
 
 ###
 
-### 이미지 업로드 (POST /api/images) 터미널에서 입력
-curl -X POST http://localhost:3000/api/image -F "image=@data\\img\\hello.png"
+### 이미지 업로드 (POST /api/image) 터미널에서 입력
+curl -X POST http://localhost:3000/api/image -F "image=@data/img/hello.png"
+
