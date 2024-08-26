@@ -282,17 +282,11 @@ postRouter.route('/posts/:postId')
             const { password } = req.body;
 
             // 필수 필드 검증
-            if (!password) {
-                return res.status(400).json({ message: "비밀번호를 입력해 주세요" });
-            }
 
             // 게시글 찾기
             const post = await Post.findById(postId);
 
             // 게시글이 존재하지 않는 경우 404 에러 반환
-            if (!post) {
-                return res.status(404).json({ message: "게시글이 존재하지 않습니다" });
-            }
 
             // 비밀번호가 일치하지 않는 경우 401 에러 반환
             if (post.postPassword !== password) {
@@ -343,11 +337,6 @@ postRouter.route('/posts/:postId')
 
             // 게시글 찾기
             const post = await Post.findById(postId);
-
-            // 게시글이 존재하지 않는 경우 404 에러 반환
-            if (!post) {
-                return res.status(404).json({ message: "존재하지 않습니다" });
-            }
 
             // 공개 여부를 포함한 응답 반환
             return res.status(200).json({
