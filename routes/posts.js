@@ -130,8 +130,8 @@ postRouter.route('/groups/:groupId/posts')
     });
 
 // 게시글 수정 및 삭제, 상세 정보 조회    
-postRouter.route('/posts/:postId')  
-    .put(async (req, res)=>{  //게시글 수정
+postRouter.route('/posts/:postId')
+    .put(async (req, res) => {  // 게시글 수정
         try {
             const { postId } = req.params;
             const {
@@ -178,9 +178,26 @@ postRouter.route('/posts/:postId')
             await post.save();
 
             // 성공적으로 수정되었음을 나타내는 200 응답
-            return res.status(200).json(post);
+            // 응답 형식 맞추기
+            const response = {
+                id: post._id,  // Assuming `post._id` is the unique ID of the post
+                groupId: post.groupId || null,  // Assuming `groupId` is part of the post schema
+                nickname: post.nickname,
+                title: post.title,
+                content: post.content,
+                imageUrl: post.imageUrl,
+                tags: post.tags,
+                location: post.location,
+                moment: post.moment,
+                isPublic: post.isPublic,
+                likeCount: post.likeCount || 0,  // Assuming `likeCount` is part of the post schema
+                commentCount: post.commentCount || 0,  // Assuming `commentCount` is part of the post schema
+                createdAt: post.createdAt  // Assuming `createdAt` is part of the post schema
+            };
+
+            return res.status(200).json(response);
         } catch (error) {
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     })
     .delete(async (req, res) => { //게시글 삭제

@@ -56,6 +56,22 @@ GET http://localhost:3000/api/groups/123/posts?page=2&pageSize=5&sortBy=latest&i
 Content-Type: application/json
 
 
+###게시글 수정
+PUT http://localhost:3000/api/posts/66cc288e7738af4a1096227b HTTP/1.1
+Content-Type: application/json
+
+{
+    "nickname": "john_doe",
+    "title": "Updated Title",
+    "content": "This is the updated content of the post.",
+    "postPassword": "securepassword",
+    "imageUrl": "https://example.com/image.jpg",
+    "tags": ["update", "example"],
+    "location": "New York",
+    "moment": "2024-02-21",
+    "isPublic": true
+}
+
 ###
 
 #게시글 삭제
