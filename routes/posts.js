@@ -1,10 +1,31 @@
 import express from 'express';
-import Post from '../models/post.js';  // Mongoose Post 모델을 가져옵니다.
+import Post from '../models/post.js';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+
 const postRouter = express.Router();
 
-// 그룹에 게시글 추가 및 게시글 목록 조회
+// Multer 설정
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = 'uploads/';
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+
+const upload = multer({ storage });
+
+// 게시글 작성 API
 postRouter.route('/groups/:groupId/posts')
-    .post(async (req, res) => {  // 게시글 등록 API
+    .post(upload.single('image'), async (req, res) => {
         try {
             const {
                 nickname,
@@ -12,7 +33,6 @@ postRouter.route('/groups/:groupId/posts')
                 content,
                 postPassword,
                 groupPassword,
-                imageUrl,
                 tags,
                 location,
                 moment,
@@ -21,12 +41,15 @@ postRouter.route('/groups/:groupId/posts')
 
             const { groupId } = req.params;
 
-            // 필수 필드가 누락된 경우 400 에러 반환
             if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 게시글을 Mongoose 모델로 생성하여 저장
+            let imageUrl = '';
+            if (req.file) {
+                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            }
+
             const newPost = new Post({
                 groupId: Number(groupId),
                 nickname,
@@ -34,10 +57,10 @@ postRouter.route('/groups/:groupId/posts')
                 content,
                 postPassword,
                 groupPassword,
-                imageUrl: imageUrl || '',  // 기본값 설정
-                tags: tags || [],  // 기본값 설정
-                location: location || '',  // 기본값 설정
-                moment: moment ? new Date(moment) : new Date(),  // moment를 Date로 변환
+                imageUrl: imageUrl || '',
+                tags: tags || [],
+                location: location || '',
+                moment: moment ? new Date(moment) : new Date(),
                 isPublic,
                 likeCount: 0,
                 commentCount: 0,
@@ -45,7 +68,6 @@ postRouter.route('/groups/:groupId/posts')
 
             const savedPost = await newPost.save();
 
-            // 성공적으로 생성되었음을 나타내는 200 응답
             return res.status(200).json({
                 id: savedPost._id,
                 groupId: savedPost.groupId,
@@ -55,7 +77,7 @@ postRouter.route('/groups/:groupId/posts')
                 imageUrl: savedPost.imageUrl,
                 tags: savedPost.tags,
                 location: savedPost.location,
-                moment: savedPost.moment.toISOString().split('T')[0],  // 날짜 형식 맞추기
+                moment: savedPost.moment.toISOString().split('T')[0],
                 isPublic: savedPost.isPublic,
                 likeCount: savedPost.likeCount,
                 commentCount: savedPost.commentCount,
@@ -79,12 +101,13 @@ postRouter.route('/groups/:groupId/posts')
             if (isNaN(pageNumber) || isNaN(pageSizeNumber) || isNaN(groupIdNumber)) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
-
             // 필터링 조건
-        const filterConditions = {
-            groupId: groupIdNumber,
-            title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
-        };
+            const filterConditions = {
+                groupId: groupIdNumber,
+                isPublic: isPublicBoolean,
+                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
+            };
+
             // 정렬 조건
             let sortConditions;
             if (sortBy === 'latest') {
