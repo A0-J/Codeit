@@ -14,6 +14,23 @@ Content-Type: application/json
   "moment": "2024-03-02",
   "isPublic": true
 }
+### Create a new post
+POST https://codeit-demo-be.onrender.com/api/groups/66c9ced5f42b8ab1cc854eb6/posts
+Content-Type: application/json
+
+{
+  "groupId": "66c9ced5f42b8ab1cc854eb6",
+  "nickname": "JaneDoe",
+  "title": "Another Post",
+  "content": "Here is some different content.",
+  "postPassword": "5678",
+  "groupPassword": "abcd",
+  "imageUrl": "http://codeit-demo-be.onrender.com/uploads/1725716936346-hello.png",
+  "tags": ["tag3", "tag4"],
+  "location": "Busan",
+  "moment": "2024-03-01T00:00:00.000Z",
+  "isPublic": true
+}
 
 ###
 # 게시글 목록 조회 - 최신 게시글 기준

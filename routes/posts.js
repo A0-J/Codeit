@@ -49,7 +49,7 @@ postRouter.route('/groups/:groupId/posts')
             }
 
             const newPost = new Post({
-                groupId: Number(groupId),
+                groupId: groupId, // No conversion to Number, assuming groupId is a string
                 nickname,
                 title,
                 content,
