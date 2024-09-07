@@ -1,9 +1,13 @@
 import mongoose from 'mongoose';
-import Post from './models/post.js';  // Post 모델을 임포트합니다.
-import Comment from './models/comment.js';  // Comment 모델을 임포트합니다.
-import posts from './data/posts.js';  // 포스트 시드 데이터를 임포트합니다.
-import comments from './data/comments.js';  // 댓글 시드 데이터를 임포트합니다.
-import { DATABASE_URL } from './env.js';  // 데이터베이스 URL을 임포트합니다.
+import Post from './models/post.js';
+import Comment from './models/comment.js';
+import posts from './data/posts.js';
+import comments from './data/comments.js';
+import dotenv from 'dotenv';
+
+dotenv.config();  // .env 파일을 로드합니다.
+
+const DATABASE_URL = process.env.DATABASE_URL;  // .env 파일에서 DATABASE_URL을 가져옵니다.
 
 mongoose.connect(DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(async () => {
@@ -41,3 +45,4 @@ mongoose.connect(DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true
     .catch(error => {
         console.error('Error connecting to the database:', error);
     });
+
