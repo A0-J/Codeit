@@ -4,6 +4,7 @@ import multer from 'multer';
 import fs from 'fs';
 import Group from '../models/group.js';
 import Image from '../models/image.js';  // Mongoose Image 모델을 가져옵니다.
+import { checkAndAssignBadges } from '../services/badgeService.js';  
 
 const router = express.Router();
 
@@ -30,7 +31,8 @@ router.post('/', upload.single('image'), async (req, res) => {
             name,
             password,
             isPublic,
-            introduction
+            introduction,
+            imageUrl // 추가된 필드
         } = req.body;
 
         if (!name || !password || typeof isPublic !== 'boolean') {
@@ -38,14 +40,14 @@ router.post('/', upload.single('image'), async (req, res) => {
         }
 
         // 이미지 처리
-        let imageUrl = null;
+        let imageUrlToSave = imageUrl; // 요청에서 받은 imageUrl을 사용
         if (req.file) {
-            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            imageUrlToSave = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
             
             // 데이터베이스에 이미지 정보 저장
             const newImage = new Image({
                 filename: req.file.filename,
-                url: imageUrl
+                url: imageUrlToSave
             });
             await newImage.save();
         }
@@ -54,7 +56,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         const newGroup = new Group({
             name,
             password, // 실제로는 해시된 비밀번호를 저장해야 합니다.
-            imageUrl: imageUrl || null,  // 이미지 URL 저장
+            imageUrl: imageUrlToSave || null,  // 이미지 URL 저장
             isPublic,
             introduction: introduction || "",
             likeCount: 0,
@@ -63,6 +65,9 @@ router.post('/', upload.single('image'), async (req, res) => {
         });
 
         const savedGroup = await newGroup.save();
+
+        // 배지 확인 및 할당
+        const badges = await checkAndAssignBadges(savedGroup);
 
         return res.status(201).json({
             id: savedGroup._id,
@@ -79,6 +84,8 @@ router.post('/', upload.single('image'), async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+
+
 // 그룹 목록 조회 API
 router.get('/', async (req, res) => {
     try {
@@ -155,7 +162,6 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-// 그룹 수정 API (이미지 업로드 추가)
 router.put('/:groupId', upload.single('image'), async (req, res) => {
     try {
         const { groupId } = req.params;
@@ -163,7 +169,8 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
             name,
             password,
             isPublic,
-            introduction
+            introduction,
+            imageUrl // 추가된 필드
         } = req.body;
 
         if (!name || !password || typeof isPublic !== 'boolean') {
@@ -180,25 +187,27 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
         }
 
         // 이미지 처리
-        let imageUrl = group.imageUrl; // 기존 이미지 유지
+        let imageUrlToSave = imageUrl; // 요청에서 받은 imageUrl을 사용
         if (req.file) {
-            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            imageUrlToSave = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
             
             // 데이터베이스에 이미지 정보 저장
             const newImage = new Image({
                 filename: req.file.filename,
-                url: imageUrl
+                url: imageUrlToSave
             });
             await newImage.save();
         }
 
         // 그룹 정보 수정
         group.name = name;
-        group.imageUrl = imageUrl;
+        group.imageUrl = imageUrlToSave || group.imageUrl; // 이미지 URL 업데이트
         group.isPublic = isPublic;
         group.introduction = introduction || group.introduction;
 
         const updatedGroup = await group.save();
+
+        const badges = await checkAndAssignBadges(updatedGroup);
 
         return res.status(200).json({
             id: updatedGroup._id,
@@ -206,7 +215,7 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
             imageUrl: updatedGroup.imageUrl,
             isPublic: updatedGroup.isPublic,
             likeCount: updatedGroup.likeCount,
-            badges: updatedGroup.badges,
+            badges: badges,
             postCount: updatedGroup.postCount,
             createdAt: updatedGroup.createdAt,
             introduction: updatedGroup.introduction
@@ -215,6 +224,7 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+
 
 // 그룹 삭제 API
 router.delete('/:groupId', async (req, res) => {
