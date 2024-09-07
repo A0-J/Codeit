@@ -1,30 +1,60 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import Group from '../models/group.js';  // Mongoose Group 모델을 가져옵니다.
+import multer from 'multer';
+import fs from 'fs';
+import Group from '../models/group.js';
+import Image from '../models/image.js';  // Mongoose Image 모델을 가져옵니다.
 
 const router = express.Router();
 
-// 그룹 등록 API
-router.post('/', async (req, res) => {
+// 저장할 디렉토리 설정 (multer)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = 'uploads/';
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+
+const upload = multer({ storage });
+
+// 그룹 생성 API (이미지 업로드 추가)
+router.post('/', upload.single('image'), async (req, res) => {
     try {
         const {
             name,
             password,
-            imageUrl,
             isPublic,
             introduction
         } = req.body;
 
-        // 필수 필드 검증
         if (!name || !password || typeof isPublic !== 'boolean') {
             return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        // 이미지 처리
+        let imageUrl = null;
+        if (req.file) {
+            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            
+            // 데이터베이스에 이미지 정보 저장
+            const newImage = new Image({
+                filename: req.file.filename,
+                url: imageUrl
+            });
+            await newImage.save();
         }
 
         // 그룹 생성 로직
         const newGroup = new Group({
             name,
             password, // 실제로는 해시된 비밀번호를 저장해야 합니다.
-            imageUrl: imageUrl || null,
+            imageUrl: imageUrl || null,  // 이미지 URL 저장
             isPublic,
             introduction: introduction || "",
             likeCount: 0,
@@ -32,10 +62,8 @@ router.post('/', async (req, res) => {
             postCount: 0
         });
 
-        // 그룹 저장
         const savedGroup = await newGroup.save();
 
-        // 201 Created 응답 반환
         return res.status(201).json({
             id: savedGroup._id,
             name: savedGroup.name,
@@ -48,7 +76,7 @@ router.post('/', async (req, res) => {
             introduction: savedGroup.introduction
         });
     } catch (error) {
-        return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
 // 그룹 목록 조회 API
@@ -127,46 +155,51 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-// 그룹 수정 API
-router.put('/:groupId', async (req, res) => {
+// 그룹 수정 API (이미지 업로드 추가)
+router.put('/:groupId', upload.single('image'), async (req, res) => {
     try {
         const { groupId } = req.params;
         const {
             name,
             password,
-            imageUrl,
             isPublic,
             introduction
         } = req.body;
 
-        // 필수 필드 검증
         if (!name || !password || typeof isPublic !== 'boolean') {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        // 그룹 조회
         const group = await Group.findById(groupId);
-
-        // 그룹이 존재하지 않는 경우
         if (!group) {
-            return res.status(404).json({ message: "존재하지 않습니다" });
+            return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
         }
 
-        // 비밀번호 확인
         if (group.password !== password) {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
 
+        // 이미지 처리
+        let imageUrl = group.imageUrl; // 기존 이미지 유지
+        if (req.file) {
+            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            
+            // 데이터베이스에 이미지 정보 저장
+            const newImage = new Image({
+                filename: req.file.filename,
+                url: imageUrl
+            });
+            await newImage.save();
+        }
+
         // 그룹 정보 수정
         group.name = name;
-        group.imageUrl = imageUrl || group.imageUrl;
+        group.imageUrl = imageUrl;
         group.isPublic = isPublic;
         group.introduction = introduction || group.introduction;
 
-        // 수정된 그룹 저장
         const updatedGroup = await group.save();
 
-        // 200 OK 응답 반환
         return res.status(200).json({
             id: updatedGroup._id,
             name: updatedGroup.name,
