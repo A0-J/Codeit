@@ -2,8 +2,6 @@ import express from 'express';
 import Post from '../models/post.js';
 import multer from 'multer';
 import fs from 'fs';
-import path from 'path';
-import axios from 'axios';
 
 const postRouter = express.Router();
 
