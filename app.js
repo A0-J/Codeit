@@ -7,7 +7,6 @@ import groupsRouter from './routes/groups.js';
 import imageRoutes from './routes/images.js';
 import dotenv from 'dotenv';
 import cors from 'cors'; // CORS 패키지 추가
-import path from 'path';
 
 // .env 파일에서 환경 변수 로드
 dotenv.config();
@@ -24,7 +23,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api', postsRouter);
 app.use('/api', commentsRouter);
