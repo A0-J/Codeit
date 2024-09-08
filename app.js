@@ -2,7 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import postsRouter from './routes/posts.js';
 import commentsRouter from './routes/comments.js';
-import usersRouter from './routes/users.js';
 import groupsRouter from './routes/groups.js';
 import imageRoutes from './routes/images.js';
 import dotenv from 'dotenv';
@@ -27,7 +26,6 @@ app.use('/uploads', express.static('uploads'));
 
 app.use('/api', postsRouter);
 app.use('/api', commentsRouter);
-app.use('/api/users', usersRouter);
 app.use('/api/groups', groupsRouter);
 app.use('/api/image', imageRoutes);
 
