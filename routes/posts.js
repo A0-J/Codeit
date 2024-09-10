@@ -257,7 +257,7 @@ postRouter.route('/posts/:postId')
             const { postId } = req.params;
 
             // 필수 필드 검증
-            if (!postId) {
+            if (!postId || !mongoose.Types.ObjectId.isValid(postId))  {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
