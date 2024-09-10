@@ -297,7 +297,37 @@ router.get('/:groupId', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+// 그룹 공개 여부 확인 API
+router.get('/:groupId/is-public', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        
+        // groupId를 숫자로 변환
+        const index = parseInt(groupId, 10);
 
+        // 유효성 검증
+        if (isNaN(index) || index < 0) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
+        const groups = await Group.find().sort({ createdAt: -1 });
+
+        // 인덱스에 해당하는 그룹 조회
+        const group = groups[index];
+
+        // 그룹이 존재하지 않는 경우
+        if (!group) {
+            return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
+        }
+
+        // 그룹의 공개 여부 반환
+        return res.status(200).json({ isPublic: group.isPublic });
+    } catch (error) {
+        console.error('Error checking group visibility:', error); // 에러 로그
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+    }
+});
 
 // 그룹 조회 권한 확인 (비밀번호 확인) API
 router.post('/:groupId/verify-password', async (req, res) => {
