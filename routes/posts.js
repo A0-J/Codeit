@@ -92,7 +92,7 @@ postRouter.route('/groups/:groupId/posts')
 
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
-            const groupIdNumber = Number(groupId);
+            const groupIdNumber = groupId;
             const isPublicBoolean = isPublic === 'true';
 
             // 요청 파라미터 유효성 검사
