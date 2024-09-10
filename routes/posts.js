@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 게시글 작성 API
-postRouter.route('/groups/:groupId')
+postRouter.route('/groups/:groupId/posts')
     .post(upload.single('image'), async (req, res) => {
         try {
             const {
