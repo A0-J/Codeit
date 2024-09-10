@@ -22,12 +22,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static('uploads'));
+// app.use('/uploads', express.static('uploads'));
 
 app.use('/', postsRouter);
 app.use('/', commentsRouter);
 app.use('/groups', groupsRouter);
-app.use('/image', imageRoutes);
+app.use('/uploads', imageRoutes);
 
 app.listen(3000, () => console.log('Server Started on port 3000'));
 
