@@ -125,9 +125,11 @@ router.get('/', async (req, res) => {
         if (keyword) {
             query.name = { $regex: keyword, $options: 'i' }; // 대소문자 구분 없는 검색
         }
-        if (isPublic !== undefined) {
+        if (isPublic) {
+            // isPublic이 문자열 'true'일 때만 true로 설정
             query.isPublic = isPublic === 'true';
         }
+
 
         // 총 아이템 수 조회
         const totalItemCount = await Group.countDocuments(query);

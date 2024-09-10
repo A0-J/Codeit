@@ -24,10 +24,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static('uploads'));
 
-app.use('/api', postsRouter);
-app.use('/api', commentsRouter);
-app.use('/api/groups', groupsRouter);
-app.use('/api/image', imageRoutes);
+app.use('/', postsRouter);
+app.use('/', commentsRouter);
+app.use('/groups', groupsRouter);
+app.use('/image', imageRoutes);
 
 app.listen(3000, () => console.log('Server Started on port 3000'));
 
