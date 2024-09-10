@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 게시글 작성 API
-postRouter.route('/groups/:groupId/posts')
+postRouter.route('/groups/:groupId')
     .post(upload.single('image'), async (req, res) => {
         try {
             const {
@@ -43,22 +43,13 @@ postRouter.route('/groups/:groupId/posts')
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 그룹 인덱스 기반으로 그룹 조회
-            const groups = await Group.find().sort({ createdAt: -1 });
-            const groupIndex = parseInt(groupId, 10); // groupId를 인덱스로 변환
-            const group = groups[groupIndex];
-
-            if (!group) {
-                return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
-            }
-
             let imageUrl = '';
             if (req.file) {
                 imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
             }
 
             const newPost = new Post({
-                groupId: group._id,  // 그룹의 ObjectId 사용
+                groupId: groupId, // No conversion to Number, assuming groupId is a string
                 nickname,
                 title,
                 content,
@@ -101,25 +92,16 @@ postRouter.route('/groups/:groupId/posts')
 
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
+            const groupIdNumber = groupId;
             const isPublicBoolean = isPublic === 'true';
 
             // 요청 파라미터 유효성 검사
-            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || groupId === undefined) {
+            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || !groupIdNumber) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
-
-            // 그룹 인덱스 기반으로 그룹 조회
-            const groups = await Group.find().sort({ createdAt: -1 });
-            const groupIndex = parseInt(groupId, 10); // groupId를 인덱스로 변환
-            const group = groups[groupIndex];
-
-            if (!group) {
-                return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
-            }
-
             // 필터링 조건
             const filterConditions = {
-                groupId: group._id,  // 그룹의 ObjectId 사용
+                groupId: groupIdNumber,
                 isPublic: isPublicBoolean,
                 title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
@@ -165,7 +147,6 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
-
 
 // 게시글 수정 및 삭제, 상세 정보 조회    
 postRouter.route('/posts/:postId')
