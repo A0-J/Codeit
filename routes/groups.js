@@ -260,19 +260,19 @@ router.delete('/:groupId', async (req, res) => {
 router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
-        // 그룹 조회
-        const group = await Group.findById(groupId);
 
-        // groupId를 ObjectId로 변환
-        if (!mongoose.Types.ObjectId.isValid(groupId)||!group) {
+        // groupId를 ObjectId로 변환 및 유효성 검사
+        if (!mongoose.Types.ObjectId.isValid(groupId)) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        
+        // 그룹 조회
+        const group = await Group.findById(groupId);
+
         // 그룹이 존재하지 않는 경우
-        //if (!group) {
-        //    return res.status(404).json({ message: "존재하지 않습니다" });
-        //}
+        if (!group) {
+            return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
+        }
 
         // 그룹 정보 반환
         return res.status(200).json({
@@ -281,7 +281,7 @@ router.get('/:groupId', async (req, res) => {
             imageUrl: group.imageUrl,
             isPublic: group.isPublic,
             likeCount: group.likeCount,
-            badges: group.badges, // badges 배열을 직접 반환
+            badges: group.badges,
             postCount: group.postCount,
             createdAt: group.createdAt,
             introduction: group.introduction
@@ -291,6 +291,7 @@ router.get('/:groupId', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+
 
 // 그룹 조회 권한 확인 (비밀번호 확인) API
 router.post('/:groupId/verify-password', async (req, res) => {
