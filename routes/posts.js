@@ -96,7 +96,7 @@ postRouter.route('/groups/:groupId/posts')
             const isPublicBoolean = isPublic === 'true';
 
             // 요청 파라미터 유효성 검사
-            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || isNaN(groupIdNumber)) {
+            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || groupIdNumber) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
             // 필터링 조건
