@@ -321,13 +321,18 @@ router.get('/:groupId/is-public', async (req, res) => {
             return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
         }
 
-        // 그룹의 공개 여부 반환
-        return res.status(200).json({ isPublic: group.isPublic });
+        // 그룹의 공개 여부에 따라 다른 메시지 반환
+        if (group.isPublic) {
+            return res.status(200).json({ message: "이 그룹은 공개 상태입니다", isPublic: true });
+        } else {
+            return res.status(200).json({ message: "이 그룹은 비공개 상태입니다", isPublic: false });
+        }
     } catch (error) {
         console.error('Error checking group visibility:', error); // 에러 로그
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+
 
 // 그룹 조회 권한 확인 (비밀번호 확인) API
 router.post('/:groupId/verify-password', async (req, res) => {
@@ -368,23 +373,6 @@ router.post('/:groupId/like', async (req, res) => {
         await group.save();
 
         return res.status(200).json({ message: "그룹 공감하기 성공" });
-    } catch (error) {
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
-    }
-});
-
-// 그룹 공개 여부 확인 API
-router.get('/:groupId/is-public', async (req, res) => {
-    try {
-        const { groupId } = req.params;
-
-        const group = await Group.findById(groupId);
-
-        //if (!group) {
-        //    return res.status(404).json({ message: "존재하지 않습니다" });
-        //}
-
-        return res.status(200).json({ id: group.id, isPublic: group.isPublic });
     } catch (error) {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
