@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const groupSchema = new mongoose.Schema({
-    _id: {
+    id: {
         type: Number, // _id를 숫자형으로 설정
         unique: true,
     },
