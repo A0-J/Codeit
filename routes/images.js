@@ -1,5 +1,5 @@
 import express from 'express';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import dotenv from 'dotenv';
@@ -60,23 +60,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         }
 
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error: dbError.message });
-    }
-});
-
-// S3 업로드 에러 처리
-upload.single('image')(req, res, (uploadError) => {
-    if (uploadError) {
-        console.error('Error uploading file to S3:', uploadError);
-
-        if (uploadError.code === 'NoSuchBucket') {
-            return res.status(404).json({ message: "S3 버킷을 찾을 수 없습니다", error: uploadError.message });
-        }
-
-        if (uploadError.code === 'AccessDenied') {
-            return res.status(403).json({ message: "S3 접근이 거부되었습니다", error: uploadError.message });
-        }
-
-        return res.status(500).json({ message: "S3 업로드 오류가 발생했습니다", error: uploadError.message });
     }
 });
 
