@@ -1,13 +1,13 @@
-import express from 'express';  // express 모듈을 import해야 합니다
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';  // AWS SDK v3 모듈을 import합니다
+import express from 'express';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import dotenv from 'dotenv';
-import Image from '../models/image.js';  // 데이터베이스 모델을 import해야 합니다
+import Image from '../models/image.js';
 
 dotenv.config();
 
-const router = express.Router();  // express.Router()를 사용하여 router 정의
+const router = express.Router();
 
 // AWS S3 설정
 const s3 = new S3Client({
@@ -51,10 +51,33 @@ router.post('/', upload.single('image'), async (req, res) => {
         await newImage.save();
 
         return res.status(200).json({ imageUrl });
-    } catch (error) {
-        console.error('Error saving image to database:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+    } catch (dbError) {
+        console.error('Error saving image to database:', dbError);
+
+        // 데이터베이스 관련 오류에 대한 세부적인 처리
+        if (dbError.name === 'ValidationError') {
+            return res.status(400).json({ message: "데이터베이스 검증 오류", error: dbError.message });
+        }
+
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: dbError.message });
     }
 });
 
-export default router;  // router를 default로 내보냅니다
+// S3 업로드 에러 처리
+upload.single('image')(req, res, (uploadError) => {
+    if (uploadError) {
+        console.error('Error uploading file to S3:', uploadError);
+
+        if (uploadError.code === 'NoSuchBucket') {
+            return res.status(404).json({ message: "S3 버킷을 찾을 수 없습니다", error: uploadError.message });
+        }
+
+        if (uploadError.code === 'AccessDenied') {
+            return res.status(403).json({ message: "S3 접근이 거부되었습니다", error: uploadError.message });
+        }
+
+        return res.status(500).json({ message: "S3 업로드 오류가 발생했습니다", error: uploadError.message });
+    }
+});
+
+export default router;
