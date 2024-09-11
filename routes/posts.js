@@ -137,18 +137,13 @@ postRouter.route('/posts/:postId')
         try {
             const { postId } = req.params;
     
-            // 필수 필드 검증
-            if (!postId || isNaN(parseInt(postId, 10))) {
+            // 필수 필드 검증 및 MongoDB ObjectId 형식 확인
+            if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
     
-            const index = parseInt(postId, 10);
-    
-            // 전체 게시글 조회 (페이징 처리나 성능 최적화 고려 필요)
-            const posts = await Post.find().sort({ createdAt: -1 });
-    
-            // 인덱스에 해당하는 게시글 조회
-            const post = posts[index];
+            // postId로 게시글 조회
+            const post = await Post.findById(postId);
     
             // 게시글이 존재하지 않는 경우
             if (!post) {
@@ -283,23 +278,21 @@ const isValidObjectId = (id) => {
 };
 
 // 댓글 생성 및 조회
-// 댓글 생성 및 조회
 postRouter.route('/posts/:postId/comments')
     .post(async (req, res) => {
         try {
             const { nickname, content, password } = req.body;
             const { postId } = req.params; // URL 파라미터에서 postId 추출
 
-            // postId 유효성 검증 (MongoDB ObjectId 형식 체크)
-            if (!mongoose.Types.ObjectId.isValid(postId)) {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
-            }
+            // 인덱스 변환 및 게시글 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
 
-            // postId로 게시글 조회
-            const post = await Post.findById(postId);
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
 
             if (!post) {
-                return res.status(404).json({ message: "존재하지 않는 게시글입니다." });
+                return res.status(404).json({ message: "해당 인덱스에 해당하는 게시글이 없습니다." });
             }
 
             // 모든 필드 검증
@@ -307,12 +300,12 @@ postRouter.route('/posts/:postId/comments')
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 새로운 댓글 생성 (게시글의 _id를 postId로 저장)
+            // 새로운 댓글 생성 (게시글의 인덱스(postId)를 저장)
             const newComment = new Comment({
                 nickname,
                 content,
                 password,
-                postId // 댓글에 게시글의 _id를 저장
+                postIndex: index // 댓글에 게시글의 인덱스를 저장
             });
 
             // 댓글 저장
@@ -329,8 +322,7 @@ postRouter.route('/posts/:postId/comments')
             // 에러 처리
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
-    })
-
+    }) //인덱스로 저장
     .get(async (req, res) => {
         try {
             const { postId } = req.params;
