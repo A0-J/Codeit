@@ -39,7 +39,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         if (!name || !password || typeof isPublic !== 'boolean') {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
-
         // 이미지 처리
         let imageUrlToSave = imageUrl; // 요청에서 받은 imageUrl을 사용
         if (req.file) {
@@ -62,7 +61,7 @@ router.post('/', upload.single('image'), async (req, res) => {
             introduction: introduction || "",
             likeCount: 0,
             badges: [],
-            postCount: 0
+            postCount: 0,
         });
 
         const savedGroup = await newGroup.save();
@@ -71,7 +70,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         const badges = await checkAndAssignBadges(savedGroup);
 
         return res.status(201).json({
-            id: savedGroup.id,
+            id: savedGroup.Id,
             name: savedGroup.name,
             imageUrl: savedGroup.imageUrl,
             isPublic: savedGroup.isPublic,
@@ -147,7 +146,7 @@ router.get('/', async (req, res) => {
             totalPages,
             totalItemCount,
             data: groups.map(group => ({
-                id: group.id,
+                id: group.Id,
                 name: group.name,
                 imageUrl: group.imageUrl,
                 isPublic: group.isPublic,
@@ -179,7 +178,7 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        const group = await Group.findById(groupId);
+        const group = await Group.findOne(groupId);
         if (!group) {
             return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
         }
@@ -234,7 +233,7 @@ router.delete('/:groupId', async (req, res) => {
         const { groupId } = req.params;
         const { password } = req.body;
 
-        const group = await Group.findById(groupId);
+        const group = await Group.findOne(groupId);
         // 필수 필드 검증
         if (!password) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
@@ -246,7 +245,6 @@ router.delete('/:groupId', async (req, res) => {
         if (group.password !== password) {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
-
         // 그룹 삭제
         await Group.findByIdAndDelete(groupId);
 
@@ -256,7 +254,7 @@ router.delete('/:groupId', async (req, res) => {
     }
 });
 
-// 그룹 상세 정보 조회 API 
+// 그룹 상세 정보 조회 API sadfsdfsdfasdfsdfsfdfffffffffffffffffffffffffffffffffffffff
 router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
@@ -268,7 +266,6 @@ router.get('/:groupId', async (req, res) => {
         if (isNaN(index) || index < 0) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
-
         // 그룹 조회
         const group = await Group.find().skip(index).limit(1).exec();
         
@@ -277,7 +274,7 @@ router.get('/:groupId', async (req, res) => {
         }
 
         return res.status(200).json({
-            id: group[0].id,
+            id: group[0].Id,
             name: group[0].name,
             imageUrl: group[0].imageUrl,
             isPublic: group[0].isPublic,
@@ -328,7 +325,7 @@ router.get('/:groupId/is-public', async (req, res) => {
         }
 
         // 숫자형 ID로 그룹 조회
-        const group = await Group.findOne({ id: numericGroupId });
+        const group = await Group.findOne({ Id: numericGroupId });
 
         // 그룹이 존재하지 않는 경우
         if (!group) {

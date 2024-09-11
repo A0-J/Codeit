@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const groupSchema = new mongoose.Schema({
-    id: {
+    Id: {
         type: Number, // _id를 숫자형으로 설정
         unique: true,
     },
@@ -24,7 +24,7 @@ groupSchema.pre('save', function (next) {
         // 현재 시간을 기반으로 숫자형 ID 생성 (예: 202409110001)
         const datePrefix = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 12); // YYYYMMDDHHmm
         const randomSuffix = (Math.floor(Math.random() * 1000)).toString().padStart(3, '0'); // 세 자리 랜덤 숫자
-        this.id = parseInt(datePrefix + randomSuffix, 10); // 숫자형 _id로 설정
+        this.Id = parseInt(datePrefix + randomSuffix, 10); // 숫자형 _id로 설정
     }
     next();
 });
