@@ -261,19 +261,7 @@ router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
         
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
@@ -302,19 +290,7 @@ router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
         
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
@@ -340,19 +316,7 @@ router.post('/:groupId/verify-password', async (req, res) => {
         const { groupId } = req.params;
         const { password } = req.body;
 
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
