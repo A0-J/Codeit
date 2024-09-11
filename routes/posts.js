@@ -21,132 +21,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// 게시글 작성 API
-postRouter.route('/groups/:groupId')
-    .post(upload.single('image'), async (req, res) => {
-        try {
-            const {
-                nickname,
-                title,
-                content,
-                postPassword,
-                groupPassword,
-                tags,
-                location,
-                moment,
-                isPublic
-            } = req.body;
-
-            const { groupId } = req.params;
-
-            if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
-            }
-
-            let imageUrl = '';
-            if (req.file) {
-                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            }
-
-            const newPost = new Post({
-                groupId: groupId, // No conversion to Number, assuming groupId is a string
-                nickname,
-                title,
-                content,
-                postPassword,
-                groupPassword,
-                imageUrl: imageUrl || '',
-                tags: tags || [],
-                location: location || '',
-                moment: moment ? new Date(moment) : new Date(),
-                isPublic,
-                likeCount: 0,
-                commentCount: 0,
-            });
-
-            const savedPost = await newPost.save();
-
-            return res.status(200).json({
-                id: savedPost._id,
-                groupId: savedPost.groupId,
-                nickname: savedPost.nickname,
-                title: savedPost.title,
-                content: savedPost.content,
-                imageUrl: savedPost.imageUrl,
-                tags: savedPost.tags,
-                location: savedPost.location,
-                moment: savedPost.moment.toISOString().split('T')[0],
-                isPublic: savedPost.isPublic,
-                likeCount: savedPost.likeCount,
-                commentCount: savedPost.commentCount,
-                createdAt: savedPost.createdAt.toISOString(),
-            });
-        } catch (error) {
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
-        }
-    })
-    .get(async (req, res) => {  // 게시글 목록 조회 API
-        try {
-            const { groupId } = req.params;
-            const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic = 'true' } = req.query;
-
-            const pageNumber = Number(page);
-            const pageSizeNumber = Number(pageSize);
-            const groupIdNumber = groupId;
-            const isPublicBoolean = isPublic === 'true';
-
-            // 요청 파라미터 유효성 검사
-            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || !groupIdNumber) {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
-            }
-            // 필터링 조건
-            const filterConditions = {
-                groupId: groupIdNumber,
-                isPublic: isPublicBoolean,
-                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
-            };
-
-            // 정렬 조건
-            let sortConditions;
-            if (sortBy === 'latest') {
-                sortConditions = { createdAt: -1 };
-            } else if (sortBy === 'mostCommented') {
-                sortConditions = { commentCount: -1 };
-            } else if (sortBy === 'mostLiked') {
-                sortConditions = { likeCount: -1 };
-            }
-
-            // 게시글 목록 조회
-            const totalItemCount = await Post.countDocuments(filterConditions);
-            const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
-            const posts = await Post.find(filterConditions)
-                .sort(sortConditions)
-                .skip((pageNumber - 1) * pageSizeNumber)
-                .limit(pageSizeNumber);
-
-            // 데이터 변환
-            const formattedPosts = posts.map(post => ({
-                id: post._id,
-                name: post.title,  // assuming 'title' is used as 'name' here
-                imageUrl: post.imageUrl || '',  // assuming there's an 'imageUrl' field
-                isPublic: post.isPublic,
-                likeCount: post.likeCount,
-                badgeCount: post.badgeCount || 0,  // defaulting to 0 if not present
-                postCount: post.postCount || 0,    // defaulting to 0 if not present
-                createdAt: post.createdAt.toISOString(),
-                introduction: post.introduction || ''  // defaulting to empty string if not present
-            }));
-
-            return res.status(200).json({
-                currentPage: pageNumber,
-                totalPages: totalPages,
-                totalItemCount: totalItemCount,
-                data: formattedPosts
-            });
-        } catch (error) {
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
-        }
-    });
 
 // 게시글 수정 및 삭제, 상세 정보 조회    
 postRouter.route('/posts/:postId')
@@ -252,23 +126,29 @@ postRouter.route('/posts/:postId')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     })
-    .get(async (req, res) => { //게시글 상세 정보 조회
+    .get(async (req, res) => {
+        let postId;
         try {
-            const { postId } = req.params;
-
-            // 필수 필드 검증
-            if (!postId || !mongoose.Types.ObjectId.isValid(postId))  {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
+            // postId 추출 및 검증
+            postId = req.params.postId;
+            
+            if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+                return res.status(400).json({ message: "잘못된 요청입니다. 유효한 postId를 제공해 주세요." });
             }
-
+        } catch (error) {
+            console.error("Error extracting or validating postId:", error);
+            return res.status(500).json({ message: "서버에서 요청 파라미터를 처리하는 도중 오류가 발생했습니다.", error });
+        }
+        
+        try {
             // 게시글 찾기
             const post = await Post.findById(postId);
-
+            
             // 게시글이 존재하지 않는 경우
             if (!post) {
-                return res.status(404).json({ message: "존재하지 않습니다" });
+                return res.status(404).json({ message: "존재하지 않는 게시글입니다." });
             }
-
+    
             // 게시글 정보 반환
             return res.status(200).json({
                 id: post._id,
@@ -286,7 +166,8 @@ postRouter.route('/posts/:postId')
                 createdAt: post.createdAt,
             });
         } catch (error) {
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            console.error("Error fetching post from database:", error);
+            return res.status(500).json({ message: "게시글을 데이터베이스에서 가져오는 도중 오류가 발생했습니다.", error });
         }
     });
 
