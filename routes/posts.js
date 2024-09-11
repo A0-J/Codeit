@@ -118,7 +118,7 @@ postRouter.route('/groups/:groupId/posts')
                 group = await Group.findById(groupId).exec();
             } catch (err) {
                 console.error('Error retrieving group:', err);
-                return res.status(500).json({ message: "그룹 조회 중 오류 발생" });
+                return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: err });
             }
     
             if (!group) {
