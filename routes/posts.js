@@ -118,9 +118,9 @@ postRouter.route('/groups/:groupId/posts')
                 group = await Group.findOne().skip(groupIndexNumber).exec();
             } catch (err) {
                 console.error('Error retrieving group:', err);
-                return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+                return res.status(500).json({ message: "그룹 인덱스 조회 중 오류 발생" });
             }
-            
+    
             if (!group) {
                 console.error('Group not found for index:', groupIndexNumber);
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
@@ -150,29 +150,41 @@ postRouter.route('/groups/:groupId/posts')
             let posts;
             try {
                 totalItemCount = await Post.countDocuments(filterConditions);
+            } catch (err) {
+                console.error('Error counting posts:', err);
+                return res.status(500).json({ message: "게시글 수 카운트 중 오류 발생" });
+            }
+    
+            try {
                 posts = await Post.find(filterConditions)
                     .sort(sortConditions)
                     .skip((pageNumber - 1) * pageSizeNumber)
                     .limit(pageSizeNumber);
             } catch (err) {
                 console.error('Error retrieving posts:', err);
-                return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+                return res.status(500).json({ message: "게시글 조회 중 오류 발생" });
             }
     
             const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
     
             // 데이터 변환
-            const formattedPosts = posts.map(post => ({
-                id: post._id,
-                name: post.title,
-                imageUrl: post.imageUrl || '',
-                isPublic: post.isPublic,
-                likeCount: post.likeCount,
-                badgeCount: post.badgeCount || 0,
-                postCount: post.postCount || 0,
-                createdAt: post.createdAt.toISOString(),
-                introduction: post.introduction || ''
-            }));
+            let formattedPosts;
+            try {
+                formattedPosts = posts.map(post => ({
+                    id: post._id,
+                    name: post.title,
+                    imageUrl: post.imageUrl || '',
+                    isPublic: post.isPublic,
+                    likeCount: post.likeCount,
+                    badgeCount: post.badgeCount || 0,
+                    postCount: post.postCount || 0,
+                    createdAt: post.createdAt.toISOString(),
+                    introduction: post.introduction || ''
+                }));
+            } catch (err) {
+                console.error('Error formatting posts:', err);
+                return res.status(500).json({ message: "게시글 데이터 변환 중 오류 발생" });
+            }
     
             return res.status(200).json({
                 currentPage: pageNumber,
@@ -185,6 +197,7 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
+    
     
 
     
