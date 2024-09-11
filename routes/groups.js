@@ -3,11 +3,10 @@ import mongoose from 'mongoose';
 import multer from 'multer';
 import fs from 'fs';
 import Group from '../models/group.js';
-import Post from '../models/post.js';
 import Image from '../models/image.js';  // Mongoose Image 모델을 가져옵니다.
 import { checkAndAssignBadges } from '../services/badgeService.js';  
 
-const groupsRouter  = express.Router();
+const router = express.Router();
 
 // 저장할 디렉토리 설정 (multer)
 const storage = multer.diskStorage({
@@ -26,7 +25,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 그룹 생성 API (이미지 업로드 추가)
-groupsRouter .post('/', upload.single('image'), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
     try {
         const {
             name,
@@ -88,7 +87,7 @@ groupsRouter .post('/', upload.single('image'), async (req, res) => {
 
 
 // 그룹 목록 조회 API
-groupsRouter .get('/', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         // 요청 파라미터 추출
         const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic } = req.query;
@@ -165,7 +164,7 @@ groupsRouter .get('/', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-groupsRouter .put('/:groupId', upload.single('image'), async (req, res) => {
+router.put('/:groupId', upload.single('image'), async (req, res) => {
     try {
         const { groupId } = req.params;
         const {
@@ -230,7 +229,7 @@ groupsRouter .put('/:groupId', upload.single('image'), async (req, res) => {
 
 
 // 그룹 삭제 API
-groupsRouter .delete('/:groupId', async (req, res) => {
+router.delete('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
         const { password } = req.body;
@@ -257,8 +256,8 @@ groupsRouter .delete('/:groupId', async (req, res) => {
     }
 });
 
-// 그룹 상세 정보 조회 API 
-groupsRouter .get('/:groupId', async (req, res) => {
+// 그룹 상세 정보 조회 API
+router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
         
@@ -298,8 +297,8 @@ groupsRouter .get('/:groupId', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-// 그룹 공개 여부 확인 API OK
-groupsRouter .get('/:groupId/is-public', async (req, res) => {
+// 그룹 공개 여부 확인 API
+router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
         
@@ -336,7 +335,7 @@ groupsRouter .get('/:groupId/is-public', async (req, res) => {
 
 
 // 그룹 조회 권한 확인 (비밀번호 확인) API
-groupsRouter .post('/:groupId/verify-password', async (req, res) => {
+router.post('/:groupId/verify-password', async (req, res) => {
     try {
         const { groupId } = req.params;
         const { password } = req.body;
@@ -374,22 +373,11 @@ groupsRouter .post('/:groupId/verify-password', async (req, res) => {
 
 
 // 그룹 공감하기 API
-groupsRouter .post('/:groupId/like', async (req, res) => {
+router.post('/:groupId/like', async (req, res) => {
     try {
         const { groupId } = req.params;
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
 
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
@@ -406,214 +394,4 @@ groupsRouter .post('/:groupId/like', async (req, res) => {
     }
 });
 
-
-// 게시글 작성 API
-groupsRouter .post('/:groupId/posts', upload.single('image'), async (req, res) => {
-    try {
-        const {
-            nickname,
-            title,
-            content,
-            postPassword,
-            groupPassword,
-            tags,
-            location,
-            moment,
-            isPublic
-        } = req.body;
-        
-        const { groupId } = req.params;
-
-        // 요청 파라미터 검증
-        if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
-            return res.status(400).json({ message: "잘못된 요청입니다. 필수 파라미터가 누락되었습니다." });
-        }
-
-        let group;
-        try {
-            // 그룹 인덱스 변환 및 조회
-            const index = parseInt(groupId, 10);
-            const groups = await Group.find().sort({ createdAt: -1 });
-            group = groups[index];
-        } catch (groupError) {
-            console.error('Error retrieving groups:', groupError);
-            return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError.message });
-        }
-
-        // 그룹 ID 검증
-        if (!group) {
-            return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
-        }
-
-        // 파일 업로드 처리
-        let imageUrl = '';
-        if (req.file) {
-            try {
-                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            } catch (fileError) {
-                console.error('Error processing file:', fileError);
-                return res.status(500).json({ message: "파일 처리 중 오류 발생", error: fileError.message });
-            }
-        }
-
-        let savedPost;
-        try {
-            // 새 게시글 생성
-            const newPost = new Post({
-                groupId: group._id.toString(),  // 그룹 ID를 문자열로 저장
-                nickname,
-                title,
-                content,
-                postPassword,
-                groupPassword,
-                imageUrl,
-                tags: tags || [],
-                location: location || '',
-                moment: moment ? new Date(moment) : new Date(),
-                isPublic,
-                likeCount: 0,
-                commentCount: 0,
-            });
-
-            // 게시글 저장
-            savedPost = await newPost.save();
-        } catch (postError) {
-            console.error('Error saving post:', postError);
-            return res.status(500).json({ message: "게시글 저장 중 오류 발생", error: postError.message });
-        }
-
-        // 200 OK 응답 반환
-        return res.status(200).json({
-            id: savedPost._id,
-            groupId: savedPost.groupId,
-            nickname: savedPost.nickname,
-            title: savedPost.title,
-            content: savedPost.content,
-            imageUrl: savedPost.imageUrl,
-            tags: savedPost.tags,
-            location: savedPost.location,
-            moment: savedPost.moment.toISOString().split('T')[0],
-            isPublic: savedPost.isPublic,
-            likeCount: savedPost.likeCount,
-            commentCount: savedPost.commentCount,
-            createdAt: savedPost.createdAt.toISOString(),
-        });
-    } catch (error) {
-        console.error('Unexpected error creating post:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
-    }
-});
-
-// 게시글 목록 조회 API
-groupsRouter .get('/:groupId/posts', async (req, res) => {
-    try {
-        const { groupId } = req.params;
-        const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic = 'true' } = req.query;
-
-        const pageNumber = Number(page);
-        const pageSizeNumber = Number(pageSize);
-        const isPublicBoolean = isPublic === 'true';
-
-        // 요청 파라미터 유효성 검사
-        if (isNaN(pageNumber) || isNaN(pageSizeNumber)) {
-            console.error('Invalid request parameters:', { pageNumber, pageSizeNumber });
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 그룹 인덱스 변환
-        const index = parseInt(groupId, 10);
-
-        // 그룹 검증
-        let group;
-        try {
-            // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-            const groups = await Group.find().sort({ createdAt: -1 });
-
-            // 인덱스에 해당하는 그룹 조회
-            group = groups[index];
-        
-            if (!group) {
-                console.error('Group not found for ID:', groupId);
-                return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
-            }
-        } catch (groupError) {
-            console.error('Error retrieving groups:', groupError);
-            return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError.message });
-        }
-
-        // 필터링 조건 설정
-        const filterConditions = {
-            groupId: group._id.toString(),  // 그룹 ObjectId를 문자열로 변환
-            isPublic: isPublicBoolean,
-            title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
-        };
-
-        // 정렬 조건 설정
-        let sortConditions;
-        try {
-            if (sortBy === 'latest') {
-                sortConditions = { createdAt: -1 };
-            } else if (sortBy === 'mostCommented') {
-                sortConditions = { commentCount: -1 };
-            } else if (sortBy === 'mostLiked') {
-                sortConditions = { likeCount: -1 };
-            } else {
-                console.error('Invalid sortBy value:', sortBy);
-                return res.status(400).json({ message: "잘못된 정렬 기준입니다" });
-            }
-        } catch (sortError) {
-            console.error('Error setting sort conditions:', sortError);
-            return res.status(500).json({ message: "정렬 조건 설정 중 오류 발생", error: sortError.message });
-        }
-
-        // 총 게시글 수 조회
-        let totalItemCount;
-        try {
-            totalItemCount = await Post.countDocuments(filterConditions);
-        } catch (countError) {
-            console.error('Error counting posts:', countError);
-            return res.status(500).json({ message: "게시글 수 조회 중 오류 발생", error: countError.message });
-        }
-
-        // 게시글 목록 조회
-        let posts;
-        try {
-            posts = await Post.find(filterConditions)
-                .sort(sortConditions)
-                .skip((pageNumber - 1) * pageSizeNumber)
-                .limit(pageSizeNumber);
-        } catch (postsError) {
-            console.error('Error retrieving posts:', postsError);
-            return res.status(500).json({ message: "게시글 조회 중 오류 발생", error: postsError.message });
-        }
-
-        // 총 페이지 수 계산
-        const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
-
-        // 200 OK 응답 반환
-        return res.status(200).json({
-            currentPage: pageNumber,
-            totalPages,
-            totalItemCount,
-            data: posts.map(post => ({
-                id: post._id,
-                groupId: post.groupId,
-                nickname: post.nickname,
-                title: post.title,
-                content: post.content,
-                imageUrl: post.imageUrl,
-                tags: post.tags,
-                location: post.location,
-                moment: post.moment.toISOString().split('T')[0],
-                isPublic: post.isPublic,
-                likeCount: post.likeCount,
-                commentCount: post.commentCount,
-                createdAt: post.createdAt.toISOString(),
-            }))
-        });
-    } catch (error) {
-        console.error('Unexpected error:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
-    }
-});
-export default groupsRouter ;
+export default router;
