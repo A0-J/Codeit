@@ -3,12 +3,6 @@ import mongoose from 'mongoose';
 // 댓글 스키마 정의
 const CommentSchema = new mongoose.Schema(
     {
-        // mongoose 자동 id 필드 사용
-        postId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Post',  // 'Post' 모델과 연관
-            required: true
-        },
         nickname: {
             type: String,
             required: true,

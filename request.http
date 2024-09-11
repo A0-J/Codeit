@@ -68,11 +68,11 @@ Content-Type: application/json
 ###
 
 #게시글 삭제
-DELETE https://codeit-demo-be.onrender.com/posts/0/is-public
+DELETE https://codeit-demo-be.onrender.com/posts/0
 Content-Type: application/json
 
 {
-  "postPassword": "5678"
+  "postPassword": "char1234"
 }
 
 ### 게시글 상세 정보 조회
