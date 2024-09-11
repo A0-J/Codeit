@@ -109,6 +109,8 @@ postRouter.route('/groups/:groupId/posts')
             const groupIndexNumber = Number(groupId);  // 그룹 인덱스
             const isPublicBoolean = isPublic === 'true';
     
+            console.log(`Group Index Number: ${groupIndexNumber}`);
+    
             // 그룹 인덱스가 숫자인지 확인
             if (isNaN(groupIndexNumber)) {
                 return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
@@ -116,11 +118,13 @@ postRouter.route('/groups/:groupId/posts')
     
             // 그룹 인덱스에 해당하는 그룹을 조회
             const group = await Group.find().skip(groupIndexNumber).limit(1).exec();
+            console.log(`Group Found: ${JSON.stringify(group)}`);
             if (!group.length) {
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
     
             const groupIdString = group[0]._id.toString();  // 그룹 ObjectId를 문자열로 변환
+            console.log(`Group ID String: ${groupIdString}`);
     
             // 필터링 조건
             const filterConditions = {
@@ -128,6 +132,8 @@ postRouter.route('/groups/:groupId/posts')
                 isPublic: isPublicBoolean,
                 title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
+    
+            console.log(`Filter Conditions: ${JSON.stringify(filterConditions)}`);
     
             // 정렬 조건
             let sortConditions;
@@ -138,14 +144,17 @@ postRouter.route('/groups/:groupId/posts')
             } else if (sortBy === 'mostLiked') {
                 sortConditions = { likeCount: -1 };
             }
+            console.log(`Sort Conditions: ${JSON.stringify(sortConditions)}`);
     
             // 게시글 목록 조회
             const totalItemCount = await Post.countDocuments(filterConditions);
+            console.log(`Total Item Count: ${totalItemCount}`);
             const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
             const posts = await Post.find(filterConditions)
                 .sort(sortConditions)
                 .skip((pageNumber - 1) * pageSizeNumber)
                 .limit(pageSizeNumber);
+            console.log(`Posts: ${JSON.stringify(posts)}`);
     
             // 데이터 변환
             const formattedPosts = posts.map(post => ({
@@ -171,6 +180,7 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
+    
     
     
 
