@@ -257,7 +257,7 @@ router.delete('/:groupId', async (req, res) => {
     }
 });
 
-// 그룹 상세 정보 조회 API
+// 그룹 상세 정보 조회 API 
 router.get('/:groupId', async (req, res) => {
     try {
         const { groupId } = req.params;
@@ -298,7 +298,7 @@ router.get('/:groupId', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-// 그룹 공개 여부 확인 API
+// 그룹 공개 여부 확인 API OK
 router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
@@ -377,8 +377,19 @@ router.post('/:groupId/verify-password', async (req, res) => {
 router.post('/:groupId/like', async (req, res) => {
     try {
         const { groupId } = req.params;
+        // groupId를 숫자로 변환
+        const index = parseInt(groupId, 10);
 
-        const group = await Group.findById(groupId);
+        // 유효성 검증
+        if (isNaN(index) || index < 0) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
+        const groups = await Group.find().sort({ createdAt: -1 });
+
+        // 인덱스에 해당하는 그룹 조회
+        const group = groups[index];
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
@@ -397,7 +408,7 @@ router.post('/:groupId/like', async (req, res) => {
 
 export default router;
 
-// 게시글 작성 API
+// 게시글 작성 API OK
 router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
     try {
         const {
@@ -494,7 +505,7 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
     }
 });
 
-// 게시글 목록 조회 API
+// 게시글 목록 조회 API 
 router.get('/:groupId/posts', async (req, res) => {
     try {
         const { groupId } = req.params;
