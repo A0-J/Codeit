@@ -15,7 +15,8 @@ Content-Type: application/json
   "isPublic": true
 }
 ### Create a new post
-POST https://codeit-demo-be.onrender.com/groups/0/posts
+
+POST https://codeit-demo-be.onrender.com/groups/66e1ac018d1b2b2abd84b262/posts 
 Content-Type: application/json
 
 {
@@ -32,9 +33,9 @@ Content-Type: application/json
   "isPublic": true
 }
 ###
-GET https://codeit-demo-be.onrender.com/groups/66e1ac018d1b2b2abd84b262/posts?keyword=example&sortBy=mostLiked&isPublic=true&page=1&pageSize=10
-
+GET https://codeit-demo-be.onrender.com/groups/66e1ac018d1b2b2abd84b262/posts
 ###
+
 #게시글 조회
 GET https://codeit-demo-be.onrender.com/groups/0/posts 
 Content-Type: application/json

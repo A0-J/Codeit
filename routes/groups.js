@@ -400,31 +400,25 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
             }
         }
 
-        let savedPost;
-        try {
-            // 새 게시글 생성
-            const newPost = new Post({
-                groupId: group._id,  // 그룹 ID를 문자열로 저장
-                nickname,
-                title,
-                content,
-                postPassword,
-                groupPassword,
-                imageUrl,
-                tags: tags || [],
-                location: location || '',
-                moment: moment ? new Date(moment) : new Date(),
-                isPublic,
-                likeCount: 0,
-                commentCount: 0,
-            });
+        // 새 게시글 생성
+        const newPost = new Post({
+            groupId: group._id,  // 그룹 ID를 문자열로 저장
+            nickname,
+            title,
+            content,
+            postPassword,
+            groupPassword,
+            imageUrl,
+            tags: tags || [],
+            location: location || '',
+            moment: moment ? new Date(moment) : new Date(),
+            isPublic,
+            likeCount: 0,
+            commentCount: 0,
+        });
 
-            // 게시글 저장
-            savedPost = await newPost.save();
-        } catch (postError) {
-            console.error('Error saving post:', postError);
-            return res.status(500).json({ message: "게시글 저장 중 오류 발생", error: postError.message });
-        }
+        // 게시글 저장
+        const savedPost = await newPost.save();
 
         // 200 OK 응답 반환
         return res.status(200).json({
@@ -442,13 +436,17 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
             commentCount: savedPost.commentCount,
             createdAt: savedPost.createdAt.toISOString(),
         });
+
     } catch (error) {
+        // 일반적인 에러를 잡아내고 로깅합니다.
         console.error('Unexpected error creating post:', error);
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
 
+
 // 게시글 목록 조회 API
+
 router.get('/:groupId/posts', async (req, res) => {
     try {
         const { groupId } = req.params;
