@@ -483,13 +483,12 @@ router.get('/:groupId/posts', async (req, res) => {
         // 게시글 목록 조회
         const totalItemCount = await Post.countDocuments(filterConditions);
         const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
-        const posts = await Post.find(filterConditions)
-            .sort(sortConditions)
-            .skip((pageNumber - 1) * pageSizeNumber)
-            .limit(pageSizeNumber);
 
-        // 데이터 변환
-        const formattedPosts = posts.map(post => ({
+
+        return res.status(200).json({
+            currentPage: pageNumber,
+            totalPages: totalPages,
+            totalItemCount: totalItemCount,
             id: post._id,
             name: post.title, // assuming 'title' is used as 'name' here
             imageUrl: post.imageUrl || '', // assuming there's an 'imageUrl' field
@@ -499,13 +498,6 @@ router.get('/:groupId/posts', async (req, res) => {
             postCount: post.postCount || 0, // defaulting to 0 if not present
             createdAt: post.createdAt.toISOString(),
             introduction: post.introduction || '' // defaulting to empty string if not present
-        }));
-
-        return res.status(200).json({
-            currentPage: pageNumber,
-            totalPages: totalPages,
-            totalItemCount: totalItemCount,
-            data: formattedPosts
         });
     } catch (error) {
         console.error('서버 오류:', error); // 디버깅을 위해 오류 로그 추가
