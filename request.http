@@ -68,7 +68,7 @@ Content-Type: application/json
 ###
 
 #게시글 삭제
-DELETE http://localhost:3000/api/posts/66cc29221c98402ee3735e05
+DELETE https://codeit-demo-be.onrender.com/posts/0/is-public
 Content-Type: application/json
 
 {
@@ -76,7 +76,7 @@ Content-Type: application/json
 }
 
 ### 게시글 상세 정보 조회
-GET https://codeit-demo-be.onrender.com/api/posts/66dc6dbaafbc72ce4ed26cc9
+GET https://codeit-demo-be.onrender.com/posts/0
 Content-Type: application/json
 
 ###게시글 조회 권한 확인### z

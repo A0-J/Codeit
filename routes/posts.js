@@ -50,8 +50,12 @@ postRouter.route('/posts/:postId')
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 게시글 찾기
-            const post = await Post.findById(postId);
+            // 인덱스 변환 및 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
+
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
 
             // 게시글이 존재하지 않는 경우 404 에러 반환
             if (!post) {
@@ -70,17 +74,16 @@ postRouter.route('/posts/:postId')
             post.imageUrl = imageUrl;
             post.tags = tags;
             post.location = location;
-            post.moment = moment;
+            post.moment = moment ? new Date(moment) : post.moment;
             post.isPublic = isPublic;
 
             // 업데이트된 게시글 저장
             await post.save();
 
             // 성공적으로 수정되었음을 나타내는 200 응답
-            // 응답 형식 맞추기
             const response = {
-                id: post._id,  // Assuming `post._id` is the unique ID of the post
-                groupId: post.groupId || null,  // Assuming `groupId` is part of the post schema
+                id: post._id,
+                groupId: post.groupId || null,
                 nickname: post.nickname,
                 title: post.title,
                 content: post.content,
@@ -89,9 +92,9 @@ postRouter.route('/posts/:postId')
                 location: post.location,
                 moment: post.moment,
                 isPublic: post.isPublic,
-                likeCount: post.likeCount || 0,  // Assuming `likeCount` is part of the post schema
-                commentCount: post.commentCount || 0,  // Assuming `commentCount` is part of the post schema
-                createdAt: post.createdAt  // Assuming `createdAt` is part of the post schema
+                likeCount: post.likeCount || 0,
+                commentCount: post.commentCount || 0,
+                createdAt: post.createdAt
             };
 
             return res.status(200).json(response);
@@ -99,37 +102,41 @@ postRouter.route('/posts/:postId')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     })
-    .delete(async (req, res) => { //게시글 삭제
+    .delete(async (req, res) => { // 게시글 삭제
         try {
             const { postId } = req.params;
             const { postPassword } = req.body;
-    
+
             // 필수 필드 검증
             if (!postId || !postPassword) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
-    
-            // 해당 게시글을 데이터베이스에서 찾습니다.
-            const post = await Post.findById(postId);
-    
+
+            // 인덱스 변환 및 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
+
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
+
             // 게시글이 존재하지 않는 경우
             if (!post) {
                 return res.status(404).json({ message: "존재하지 않습니다" });
             }
-    
+
             // 비밀번호가 일치하지 않는 경우
             if (post.postPassword !== postPassword) {
                 return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
             }
-    
+
             // 게시글 삭제
-            await Post.findByIdAndDelete(postId);
-    
+            await Post.findByIdAndDelete(post._id);
+
             // 성공적으로 삭제되었음을 알리는 응답
             return res.status(200).json({ message: "게시글 삭제 성공" });
-    
+
         } catch (error) {
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     })
     .get(async (req, res) => { // 게시글 상세 정보 조회
@@ -178,19 +185,28 @@ postRouter.route('/posts/:postId')
 
 //별도로 분리된 라우팅들
 
-//게시글 조회 권한 확인하기
-    postRouter.route('/posts/:postId/verify-password')
-    .post(async (req, res) => {
+postRouter.route('/posts/:postId/verify-password')
+    .post(async (req, res) => { // 게시글 조회 권한 확인
         try {
             const { postId } = req.params;
             const { password } = req.body;
 
             // 필수 필드 검증
+            if (!postId || !password) {
+                return res.status(400).json({ message: "잘못된 요청입니다" });
+            }
 
-            // 게시글 찾기
-            const post = await Post.findById(postId);
+            // 인덱스 변환 및 게시글 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
+
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
 
             // 게시글이 존재하지 않는 경우 404 에러 반환
+            if (!post) {
+                return res.status(404).json({ message: "존재하지 않습니다" });
+            }
 
             // 비밀번호가 일치하지 않는 경우 401 에러 반환
             if (post.postPassword !== password) {
@@ -202,17 +218,21 @@ postRouter.route('/posts/:postId')
 
         } catch (error) {
             // 서버 오류 처리
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     });
-//게시글 공감하기
-    postRouter.route('/posts/:postId/like')
-    .post(async (req, res) => {
+
+postRouter.route('/posts/:postId/like')
+    .post(async (req, res) => { // 게시글 공감하기
         try {
             const { postId } = req.params;
 
-            // 게시글 찾기
-            const post = await Post.findById(postId);
+            // 인덱스 변환 및 게시글 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
+
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
 
             // 게시글이 존재하지 않는 경우 404 에러 반환
             if (!post) {
@@ -229,18 +249,27 @@ postRouter.route('/posts/:postId')
             return res.status(200).json({ message: "게시글 공감하기 성공" });
 
         } catch (error) {
-            // 서버 오류 처리-잘못된 형식의 게시글 ID,...
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            // 서버 오류 처리
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     });
-// 게시글 공개 여부 확인
-    postRouter.route('/posts/:postId/is-public')
-    .get(async (req, res) => {
+
+postRouter.route('/posts/:postId/is-public')
+    .get(async (req, res) => { // 게시글 공개 여부 확인
         try {
             const { postId } = req.params;
 
-            // 게시글 찾기
-            const post = await Post.findById(postId);
+            // 인덱스 변환 및 게시글 조회
+            const index = parseInt(postId, 10);
+            const posts = await Post.find().sort({ createdAt: -1 });
+
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
+
+            // 게시글이 존재하지 않는 경우 404 에러 반환
+            if (!post) {
+                return res.status(404).json({ message: "존재하지 않습니다" });
+            }
 
             // 공개 여부를 포함한 응답 반환
             return res.status(200).json({
@@ -251,8 +280,9 @@ postRouter.route('/posts/:postId')
         } catch (error) {
             // 서버 오류 처리
             console.error('Error retrieving post visibility:', error); // 에러 로그
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     });
+
 
 export default postRouter;
