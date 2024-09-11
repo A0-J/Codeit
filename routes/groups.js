@@ -315,21 +315,19 @@ router.get('/:groupId/is-public', async (req, res) => {
     }
 });
 
-// 그룹 조회 권한 확인 (비밀번호 확인) API
-router.post('/:groupId/verify-password', async (req, res) => {
+router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
-        const { password } = req.body;
 
-        // groupId를 숫자형으로 변환 (숫자형으로 설정된 경우)
+        // 그룹 ID를 숫자로 변환
         const numericGroupId = parseInt(groupId, 10);
 
-        // 변환된 숫자형 ID 유효성 검사
+        // 숫자로 변환할 수 없는 경우
         if (isNaN(numericGroupId)) {
-            return res.status(400).json({ message: "잘못된 요청입니다. 유효하지 않은 그룹 ID입니다." });
+            return res.status(400).json({ message: "잘못된 그룹 ID입니다" });
         }
 
-        // id 필드로 그룹 조회
+        // 숫자형 ID로 그룹 조회
         const group = await Group.findOne({ id: numericGroupId });
 
         // 그룹이 존재하지 않는 경우
@@ -337,17 +335,19 @@ router.post('/:groupId/verify-password', async (req, res) => {
             return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
         }
 
-        // 비밀번호 확인
-        if (group.password !== password) {
-            return res.status(401).json({ message: "비밀번호가 틀렸습니다" });
+        // 그룹의 공개 여부에 따라 응답
+        if (group.isPublic) {
+            return res.status(200).json({ message: "이 그룹은 공개 상태입니다", isPublic: true });
+        } else {
+            return res.status(200).json({ message: "이 그룹은 비공개 상태입니다", isPublic: false });
         }
-
-        return res.status(200).json({ message: "비밀번호가 확인되었습니다" });
     } catch (error) {
-        console.error('Error verifying group password:', error); // 에러 로그
+        console.error('Error checking group visibility:', error); // 에러 로그
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
+
+
 
 // 그룹 공감하기 API
 router.post('/:groupId/like', async (req, res) => {
