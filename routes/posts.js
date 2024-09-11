@@ -283,21 +283,23 @@ const isValidObjectId = (id) => {
 };
 
 // 댓글 생성 및 조회
+// 댓글 생성 및 조회
 postRouter.route('/posts/:postId/comments')
     .post(async (req, res) => {
         try {
             const { nickname, content, password } = req.body;
             const { postId } = req.params; // URL 파라미터에서 postId 추출
 
-            // 인덱스 변환 및 게시글 조회
-            const index = parseInt(postId, 10);
-            const posts = await Post.find().sort({ createdAt: -1 });
+            // postId 유효성 검증 (MongoDB ObjectId 형식 체크)
+            if (!mongoose.Types.ObjectId.isValid(postId)) {
+                return res.status(400).json({ message: "잘못된 요청입니다" });
+            }
 
-            // 인덱스에 해당하는 게시글 조회
-            const post = posts[index];
+            // postId로 게시글 조회
+            const post = await Post.findById(postId);
 
             if (!post) {
-                return res.status(404).json({ message: "해당 인덱스에 해당하는 게시글이 없습니다." });
+                return res.status(404).json({ message: "존재하지 않는 게시글입니다." });
             }
 
             // 모든 필드 검증
@@ -305,12 +307,12 @@ postRouter.route('/posts/:postId/comments')
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 새로운 댓글 생성 (게시글의 인덱스(postId)를 저장)
+            // 새로운 댓글 생성 (게시글의 _id를 postId로 저장)
             const newComment = new Comment({
                 nickname,
                 content,
                 password,
-                postIndex: index // 댓글에 게시글의 인덱스를 저장
+                postId // 댓글에 게시글의 _id를 저장
             });
 
             // 댓글 저장
@@ -328,6 +330,7 @@ postRouter.route('/posts/:postId/comments')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     })
+
     .get(async (req, res) => {
         try {
             const { postId } = req.params;

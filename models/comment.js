@@ -15,10 +15,7 @@ const CommentSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        postIndex: {  // 게시글의 인덱스를 저장
-            type: Number,
-            required: true,
-        }
+        postId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
     },
     {
         timestamps: true, // 자동으로 createdAt 및 updatedAt 필드 추가
