@@ -296,19 +296,7 @@ router.get('/:groupId/is-public', async (req, res) => {
     try {
         const { groupId } = req.params;
         
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
@@ -333,19 +321,7 @@ router.post('/:groupId/verify-password', async (req, res) => {
         const { groupId } = req.params;
         const { password } = req.body;
 
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
@@ -369,18 +345,7 @@ router.post('/:groupId/like', async (req, res) => {
     try {
         const { groupId } = req.params;
         // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-        const groups = await Group.find().sort({ createdAt: -1 });
-
-        // 인덱스에 해당하는 그룹 조회
-        const group = groups[index];
+        const group = await Group.findById(groupId);
 
         if (!group) {
             return res.status(404).json({ message: "존재하지 않습니다" });
@@ -421,10 +386,7 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
 
         let group;
         try {
-            // 그룹 인덱스 변환 및 조회
-            const index = parseInt(groupId, 10);
-            const groups = await Group.find().sort({ createdAt: -1 });
-            group = groups[index];
+            const group = await Group.findById(groupId);
         } catch (groupError) {
             console.error('Error retrieving groups:', groupError);
             return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError.message });
@@ -516,11 +478,7 @@ router.get('/:groupId/posts', async (req, res) => {
         // 그룹 검증
         let group;
         try {
-            // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-            const groups = await Group.find().sort({ createdAt: -1 });
-
-            // 인덱스에 해당하는 그룹 조회
-            group = groups[index];
+            const group = await Group.findById(groupId);
         
             if (!group) {
                 console.error('Group not found for ID:', groupId);
