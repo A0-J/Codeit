@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "aws-sdk": "^2.1691.0",
     "bcryptjs": "^2.4.3",
     "buffer": "^6.0.3",
     "cors": "^2.8.5",
