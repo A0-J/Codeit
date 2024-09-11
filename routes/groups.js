@@ -90,6 +90,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 router.post('/', upload.single('image'), async (req, res) => {
     try {
         const {
+            groupId,
             name,
             password,
             isPublic,
