@@ -71,7 +71,7 @@ router.post('/', upload.single('image'), async (req, res) => {
         const badges = await checkAndAssignBadges(savedGroup);
 
         return res.status(201).json({
-            id: savedGroup._id,
+            id: savedGroup.id,
             name: savedGroup.name,
             imageUrl: savedGroup.imageUrl,
             isPublic: savedGroup.isPublic,
@@ -85,69 +85,6 @@ router.post('/', upload.single('image'), async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-
-// 그룹 생성 API (이미지 업로드 추가)
-router.post('/', upload.single('image'), async (req, res) => {
-    try {
-        const {
-            groupId,
-            name,
-            password,
-            isPublic,
-            introduction,
-            imageUrl // 추가된 필드
-        } = req.body;
-
-        if (!name || !password || typeof isPublic !== 'boolean') {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 이미지 처리
-        let imageUrlToSave = imageUrl; // 요청에서 받은 imageUrl을 사용
-        if (req.file) {
-            imageUrlToSave = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            
-            // 데이터베이스에 이미지 정보 저장
-            const newImage = new Image({
-                filename: req.file.filename,
-                url: imageUrlToSave
-            });
-            await newImage.save();
-        }
-
-        // 그룹 생성 로직
-        const newGroup = new Group({
-            name,
-            password, // 실제로는 해시된 비밀번호를 저장해야 합니다.
-            imageUrl: imageUrlToSave || null,  // 이미지 URL 저장
-            isPublic,
-            introduction: introduction || "",
-            likeCount: 0,
-            badges: [],
-            postCount: 0
-        });
-
-        const savedGroup = await newGroup.save();
-
-        // 배지 확인 및 할당
-        const badges = await checkAndAssignBadges(savedGroup);
-
-        return res.status(201).json({
-            id: savedGroup._id,
-            name: savedGroup.name,
-            imageUrl: savedGroup.imageUrl,
-            isPublic: savedGroup.isPublic,
-            likeCount: savedGroup.likeCount,
-            badges: savedGroup.badges,
-            postCount: savedGroup.postCount,
-            createdAt: savedGroup.createdAt,
-            introduction: savedGroup.introduction
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
-    }
-});
-
 
 // 그룹 목록 조회 API
 router.get('/', async (req, res) => {
@@ -210,7 +147,7 @@ router.get('/', async (req, res) => {
             totalPages,
             totalItemCount,
             data: groups.map(group => ({
-                id: group._id,
+                id: group.id,
                 name: group.name,
                 imageUrl: group.imageUrl,
                 isPublic: group.isPublic,
@@ -276,7 +213,7 @@ router.put('/:groupId', upload.single('image'), async (req, res) => {
         const badges = await checkAndAssignBadges(updatedGroup);
 
         return res.status(200).json({
-            id: updatedGroup._id,
+            id: updatedGroup.id,
             name: updatedGroup.name,
             imageUrl: updatedGroup.imageUrl,
             isPublic: updatedGroup.isPublic,
@@ -332,59 +269,24 @@ router.get('/:groupId', async (req, res) => {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        // 그룹 정보 조회
-        const group = await Group.findOne().skip(index).limit(1); // index를 사용하여 그룹 조회
-
-        if (!group) {
-            return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
-        }
-
-        // 응답 반환
-        return res.status(200).json({
-            id: group._id,
-            name: group.name,
-            imageUrl: group.imageUrl,
-            isPublic: group.isPublic,
-            likeCount: group.likeCount,
-            badges: group.badges,
-            postCount: group.postCount,
-            createdAt: group.createdAt,
-            introduction: group.introduction
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
-    }
-});
-
-// 그룹의 게시글 목록 조회 API
-router.get('/:groupId/posts', async (req, res) => {
-    try {
-        const { groupId } = req.params;
+        // 그룹 조회
+        const group = await Group.find().skip(index).limit(1).exec();
         
-        // groupId를 숫자로 변환
-        const index = parseInt(groupId, 10);
-
-        // 유효성 검증
-        if (isNaN(index) || index < 0) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        // 그룹 존재 여부 확인
-        const group = await Group.findOne().skip(index).limit(1);
-        if (!group) {
+        if (group.length === 0) {
             return res.status(404).json({ message: "존재하지 않는 그룹입니다" });
         }
 
-        // 게시글 목록 조회
-        const posts = await Post.find({ groupId }).sort({ createdAt: -1 });
-
-        return res.status(200).json(posts.map(post => ({
-            id: post._id,
-            content: post.content,
-            createdAt: post.createdAt,
-            updatedAt: post.updatedAt,
-            author: post.author
-        })));
+        return res.status(200).json({
+            id: group[0].id,
+            name: group[0].name,
+            imageUrl: group[0].imageUrl,
+            isPublic: group[0].isPublic,
+            likeCount: group[0].likeCount,
+            badgeCount: group[0].badges.length,
+            postCount: group[0].postCount,
+            createdAt: group[0].createdAt,
+            introduction: group[0].introduction
+        });
     } catch (error) {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
