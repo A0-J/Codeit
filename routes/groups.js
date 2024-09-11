@@ -480,30 +480,37 @@ router.get('/:groupId/posts', async (req, res) => {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
+        // 그룹 인덱스 변환
         const index = parseInt(groupId, 10);
 
         // 그룹 검증
+        let group;
         try {
             // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
             const groups = await Group.find().sort({ createdAt: -1 });
 
             // 인덱스에 해당하는 그룹 조회
-            const group = groups[index];
+            group = groups[index];
         
             if (!group) {
                 console.error('Group not found for ID:', groupId);
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
+        } catch (groupError) {
+            console.error('Error retrieving groups:', groupError);
+            return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError.message });
+        }
 
-            // 필터링 조건
-            const filterConditions = {
-                groupId: group._id.toString(),  // 그룹 ObjectId를 문자열로 변환
-                isPublic: isPublicBoolean,
-                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
-            };
+        // 필터링 조건 설정
+        const filterConditions = {
+            groupId: group._id.toString(),  // 그룹 ObjectId를 문자열로 변환
+            isPublic: isPublicBoolean,
+            title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
+        };
 
-            // 정렬 조건
-            let sortConditions;
+        // 정렬 조건 설정
+        let sortConditions;
+        try {
             if (sortBy === 'latest') {
                 sortConditions = { createdAt: -1 };
             } else if (sortBy === 'mostCommented') {
@@ -514,46 +521,58 @@ router.get('/:groupId/posts', async (req, res) => {
                 console.error('Invalid sortBy value:', sortBy);
                 return res.status(400).json({ message: "잘못된 정렬 기준입니다" });
             }
+        } catch (sortError) {
+            console.error('Error setting sort conditions:', sortError);
+            return res.status(500).json({ message: "정렬 조건 설정 중 오류 발생", error: sortError.message });
+        }
 
-            // 총 게시글 수 조회
-            const totalItemCount = await Post.countDocuments(filterConditions);
+        // 총 게시글 수 조회
+        let totalItemCount;
+        try {
+            totalItemCount = await Post.countDocuments(filterConditions);
+        } catch (countError) {
+            console.error('Error counting posts:', countError);
+            return res.status(500).json({ message: "게시글 수 조회 중 오류 발생", error: countError.message });
+        }
 
-            // 게시글 목록 조회
-            const posts = await Post.find(filterConditions)
+        // 게시글 목록 조회
+        let posts;
+        try {
+            posts = await Post.find(filterConditions)
                 .sort(sortConditions)
                 .skip((pageNumber - 1) * pageSizeNumber)
                 .limit(pageSizeNumber);
-
-            // 총 페이지 수 계산
-            const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
-
-            // 200 OK 응답 반환
-            return res.status(200).json({
-                currentPage: pageNumber,
-                totalPages,
-                totalItemCount,
-                data: posts.map(post => ({
-                    id: post._id,
-                    groupId: post.groupId,
-                    nickname: post.nickname,
-                    title: post.title,
-                    content: post.content,
-                    imageUrl: post.imageUrl,
-                    tags: post.tags,
-                    location: post.location,
-                    moment: post.moment.toISOString().split('T')[0],
-                    isPublic: post.isPublic,
-                    likeCount: post.likeCount,
-                    commentCount: post.commentCount,
-                    createdAt: post.createdAt.toISOString(),
-                }))
-            });
-        } catch (groupError) {
-            console.error('Error retrieving groups:', groupError);
-            return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError });
+        } catch (postsError) {
+            console.error('Error retrieving posts:', postsError);
+            return res.status(500).json({ message: "게시글 조회 중 오류 발생", error: postsError.message });
         }
+
+        // 총 페이지 수 계산
+        const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
+
+        // 200 OK 응답 반환
+        return res.status(200).json({
+            currentPage: pageNumber,
+            totalPages,
+            totalItemCount,
+            data: posts.map(post => ({
+                id: post._id,
+                groupId: post.groupId,
+                nickname: post.nickname,
+                title: post.title,
+                content: post.content,
+                imageUrl: post.imageUrl,
+                tags: post.tags,
+                location: post.location,
+                moment: post.moment.toISOString().split('T')[0],
+                isPublic: post.isPublic,
+                likeCount: post.likeCount,
+                commentCount: post.commentCount,
+                createdAt: post.createdAt.toISOString(),
+            }))
+        });
     } catch (error) {
-        console.error('Error retrieving posts:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+        console.error('Unexpected error:', error);
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
