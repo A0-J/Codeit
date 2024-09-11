@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const PostSchema = new mongoose.Schema(
   {
-    _id: {
+    Id: {
       type:Number,
       unique:true,
   },
@@ -72,7 +72,7 @@ PostSchema.pre('save', function(next) {
   if (this.isNew) {
     // 현재 시간을 기반으로 ID 생성 (예: 202409110001)
     const datePrefix = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 12); // YYYYMMDDHHmm
-    this._id = datePrefix + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0');
+    this.Id = datePrefix + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0');
   }
   next();
 });

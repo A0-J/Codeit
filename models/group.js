@@ -1,9 +1,24 @@
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { Buffer } from 'buffer';
+
+// UUID를 숫자형으로 변환하는 함수
+function uuidToNumber(uuid) {
+    const buffer = Buffer.from(uuid.replace(/-/g, ''), 'hex'); // UUID에서 '-' 제거 후 Buffer로 변환
+    let number = BigInt(0);
+    
+    // Buffer의 각 바이트를 BigInt로 변환
+    for (const byte of buffer) {
+        number = (number << BigInt(8)) | BigInt(byte);
+    }
+    
+    return Number(number); // Number로 변환
+}
 
 const groupSchema = new mongoose.Schema({
     _id: {
-        type:Number,
-        unique:true,
+        type: Number, // _id를 숫자형으로 설정
+        unique: true,
     },
     groupId: {
         type: String,
@@ -49,12 +64,11 @@ const groupSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-// `pre` 미들웨어에서 `groupId`를 생성
+// `pre` 미들웨어에서 `UUID`를 생성하여 `_id`를 숫자형으로 변환
 groupSchema.pre('save', function(next) {
     if (this.isNew) {
-        // 현재 시간을 기반으로 ID 생성 (예: 202409110001)
-        const datePrefix = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 12); // YYYYMMDDHHmm
-        this._id = datePrefix + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0');
+        const uuid = uuidv4();
+        this._id = uuidToNumber(uuid);
     }
     next();
 });
