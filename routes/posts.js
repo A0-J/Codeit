@@ -1,8 +1,8 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import Post from '../models/post.js';
 import multer from 'multer';
 import fs from 'fs';
+import mongoose from 'mongoose';
 
 const postRouter = express.Router();
 
@@ -128,23 +128,17 @@ postRouter.route('/posts/:postId')
         }
     })
     .get(async (req, res) => {
-        let postId;
         try {
-            // postId 추출 및 검증
-            postId = req.params.postId;
-            
+            const { postId } = req.params;
+    
+            // 필수 필드 검증
             if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
                 return res.status(400).json({ message: "잘못된 요청입니다. 유효한 postId를 제공해 주세요." });
             }
-        } catch (error) {
-            console.error("Error extracting or validating postId:", error);
-            return res.status(500).json({ message: "서버에서 요청 파라미터를 처리하는 도중 오류가 발생했습니다.", error });
-        }
-        
-        try {
+    
             // 게시글 찾기
             const post = await Post.findById(postId);
-            
+    
             // 게시글이 존재하지 않는 경우
             if (!post) {
                 return res.status(404).json({ message: "존재하지 않는 게시글입니다." });
@@ -167,8 +161,8 @@ postRouter.route('/posts/:postId')
                 createdAt: post.createdAt,
             });
         } catch (error) {
-            console.error("Error fetching post from database:", error);
-            return res.status(500).json({ message: "게시글을 데이터베이스에서 가져오는 도중 오류가 발생했습니다.", error });
+            console.error("Error fetching post:", error); // 오류 로그
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
 
