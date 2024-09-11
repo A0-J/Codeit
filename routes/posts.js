@@ -103,34 +103,31 @@ postRouter.route('/groups/:groupId/posts')
     
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
-            const groupIndexNumber = Number(groupId);
             const isPublicBoolean = isPublic === 'true';
     
             // 요청 파라미터 유효성 검사
-            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || isNaN(groupIndexNumber)) {
-                console.error('Invalid request parameters:', { pageNumber, pageSizeNumber, groupIndexNumber });
+            if (isNaN(pageNumber) || isNaN(pageSizeNumber)) {
+                console.error('Invalid request parameters:', { pageNumber, pageSizeNumber });
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
     
             // 그룹 인덱스에 해당하는 그룹을 조회
             let group;
             try {
-                group = await Group.findOne().skip(groupIndexNumber).exec();
+                group = await Group.findById(groupId).exec();
             } catch (err) {
                 console.error('Error retrieving group:', err);
-                return res.status(500).json({ message: "그룹 인덱스 조회 중 오류 발생" });
+                return res.status(500).json({ message: "그룹 조회 중 오류 발생" });
             }
     
             if (!group) {
-                console.error('Group not found for index:', groupIndexNumber);
+                console.error('Group not found for ID:', groupId);
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
     
-            const groupIdString = group._id.toString();  // 그룹 ObjectId를 문자열로 변환
-    
             // 필터링 조건
             const filterConditions = {
-                groupId: groupIdString,
+                groupId: group._id.toString(),  // 그룹 ObjectId를 문자열로 변환
                 isPublic: isPublicBoolean,
                 title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
