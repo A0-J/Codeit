@@ -3,7 +3,7 @@ import AWS from 'aws-sdk';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import dotenv from 'dotenv';
-import Image from '../models/image';  // 데이터베이스 모델을 import해야 합니다
+import Image from '../models/image.js';  // 데이터베이스 모델을 import해야 합니다
 
 dotenv.config();
 
