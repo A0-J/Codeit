@@ -99,57 +99,79 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     })
-    .get(async (req, res) => {
+    .get(async (req, res) => {  // 게시글 목록 조회 API
         try {
-            const { groupIndex } = req.params; // 그룹 인덱스 받기
-            const { keyword = '', sortBy = 'createdAt', isPublic = 'true', page = '1', pageSize = '10' } = req.query;
+            const { groupId } = req.params;  // 그룹 인덱스 받기
+            const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic = 'true' } = req.query;
     
-            // 페이지 번호와 페이지 사이즈를 숫자로 변환
-            const pageNumber = parseInt(page, 10);
-            const pageSizeNumber = parseInt(pageSize, 10);
+            const pageNumber = Number(page);
+            const pageSizeNumber = Number(pageSize);
+            const groupIndexNumber = Number(groupId);  // 그룹 인덱스
+            const isPublicBoolean = isPublic === 'true';
     
-            // 그룹 인덱스를 기반으로 그룹 ID 가져오기
-            const groups = await Group.find().exec(); // 모든 그룹을 가져옴
-            const group = groups[parseInt(groupIndex, 10)]; // 인덱스에 해당하는 그룹을 가져옴
+            // 그룹 인덱스가 숫자인지 확인
+            if (isNaN(groupIndexNumber)) {
+                return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
+            }
     
+            // 그룹 인덱스에 해당하는 그룹을 조회
+            const group = await Group.findOne().skip(groupIndexNumber).exec();
             if (!group) {
-                return res.status(404).json({ message: 'Group not found' });
+                return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
     
-            const groupId = group._id; // 그룹 ID
+            const groupIdString = group._id.toString();  // 그룹 ObjectId를 문자열로 변환
     
-            // 게시글 필터링 조건 설정
-            const query = { groupId, isPublic: isPublic === 'true' };
-            if (keyword) {
-                query.title = { $regex: keyword, $options: 'i' }; // 제목에 키워드가 포함된 게시글 검색
+            // 필터링 조건
+            const filterConditions = {
+                groupId: groupIdString,  // 그룹 ID를 문자열로 사용
+                isPublic: isPublicBoolean,
+                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
+            };
+    
+            // 정렬 조건
+            let sortConditions;
+            if (sortBy === 'latest') {
+                sortConditions = { createdAt: -1 };
+            } else if (sortBy === 'mostCommented') {
+                sortConditions = { commentCount: -1 };
+            } else if (sortBy === 'mostLiked') {
+                sortConditions = { likeCount: -1 };
             }
     
-            // 게시글 정렬 설정
-            const sortOptions = {};
-            sortOptions[sortBy] = -1; // 내림차순 정렬
-    
-            // 게시글 검색 및 페이징
-            const posts = await Post.find(query)
-                .sort(sortOptions)
+            // 게시글 목록 조회
+            const totalItemCount = await Post.countDocuments(filterConditions);
+            const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
+            const posts = await Post.find(filterConditions)
+                .sort(sortConditions)
                 .skip((pageNumber - 1) * pageSizeNumber)
-                .limit(pageSizeNumber)
-                .exec();
+                .limit(pageSizeNumber);
     
-            // 총 게시글 수
-            const totalPosts = await Post.countDocuments(query).exec();
+            // 데이터 변환
+            const formattedPosts = posts.map(post => ({
+                id: post._id,
+                name: post.title,
+                imageUrl: post.imageUrl || '',
+                isPublic: post.isPublic,
+                likeCount: post.likeCount,
+                badgeCount: post.badgeCount || 0,
+                postCount: post.postCount || 0,
+                createdAt: post.createdAt.toISOString(),
+                introduction: post.introduction || ''
+            }));
     
-            // 응답 데이터
-            res.json({
-                posts,
-                totalPosts,
-                page: pageNumber,
-                pageSize: pageSizeNumber
+            return res.status(200).json({
+                currentPage: pageNumber,
+                totalPages: totalPages,
+                totalItemCount: totalItemCount,
+                data: formattedPosts
             });
         } catch (error) {
             console.error('Error fetching posts:', error);
-            res.status(500).json({ message: 'Internal Server Error' });
+            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
+    
 
 // 게시글 수정 및 삭제, 상세 정보 조회    
 postRouter.route('/posts/:postId')
