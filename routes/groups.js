@@ -86,6 +86,68 @@ router.post('/', upload.single('image'), async (req, res) => {
     }
 });
 
+// 그룹 생성 API (이미지 업로드 추가)
+router.post('/', upload.single('image'), async (req, res) => {
+    try {
+        const {
+            name,
+            password,
+            isPublic,
+            introduction,
+            imageUrl // 추가된 필드
+        } = req.body;
+
+        if (!name || !password || typeof isPublic !== 'boolean') {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        // 이미지 처리
+        let imageUrlToSave = imageUrl; // 요청에서 받은 imageUrl을 사용
+        if (req.file) {
+            imageUrlToSave = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            
+            // 데이터베이스에 이미지 정보 저장
+            const newImage = new Image({
+                filename: req.file.filename,
+                url: imageUrlToSave
+            });
+            await newImage.save();
+        }
+
+        // 그룹 생성 로직
+        const newGroup = new Group({
+            name,
+            password, // 실제로는 해시된 비밀번호를 저장해야 합니다.
+            imageUrl: imageUrlToSave || null,  // 이미지 URL 저장
+            isPublic,
+            introduction: introduction || "",
+            likeCount: 0,
+            badges: [],
+            postCount: 0
+        });
+
+        const savedGroup = await newGroup.save();
+
+        // 배지 확인 및 할당
+        const badges = await checkAndAssignBadges(savedGroup);
+
+        return res.status(201).json({
+            id: savedGroup._id,
+            name: savedGroup.name,
+            imageUrl: savedGroup.imageUrl,
+            isPublic: savedGroup.isPublic,
+            likeCount: savedGroup.likeCount,
+            badges: savedGroup.badges,
+            postCount: savedGroup.postCount,
+            createdAt: savedGroup.createdAt,
+            introduction: savedGroup.introduction
+        });
+    } catch (error) {
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+    }
+});
+
+
 // 그룹 목록 조회 API
 router.get('/', async (req, res) => {
     try {
