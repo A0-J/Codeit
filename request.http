@@ -15,7 +15,7 @@ Content-Type: application/json
   "isPublic": true
 }
 ### Create a new post
-POST https://codeit-demo-be.onrender.com/api/groups/345/posts
+POST https://codeit-demo-be.onrender.com/groups/0/posts
 Content-Type: application/json
 
 {
