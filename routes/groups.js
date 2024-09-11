@@ -321,7 +321,16 @@ router.post('/:groupId/verify-password', async (req, res) => {
         const { groupId } = req.params;
         const { password } = req.body;
 
-        const group = await Group.findById(groupId);
+        // groupId를 숫자형으로 변환 (숫자형으로 설정된 경우)
+        const numericGroupId = parseInt(groupId, 10);
+
+        // 변환된 숫자형 ID 유효성 검사
+        if (isNaN(numericGroupId)) {
+            return res.status(400).json({ message: "잘못된 요청입니다. 유효하지 않은 그룹 ID입니다." });
+        }
+
+        // id 필드로 그룹 조회
+        const group = await Group.findOne({ id: numericGroupId });
 
         // 그룹이 존재하지 않는 경우
         if (!group) {
@@ -336,7 +345,7 @@ router.post('/:groupId/verify-password', async (req, res) => {
         return res.status(200).json({ message: "비밀번호가 확인되었습니다" });
     } catch (error) {
         console.error('Error verifying group password:', error); // 에러 로그
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
 
