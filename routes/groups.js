@@ -479,9 +479,14 @@ router.get('/:groupId/posts', async (req, res) => {
             console.error('Invalid request parameters:', { pageNumber, pageSizeNumber });
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
-
+        const index = parseInt(groupId, 10);
         // 그룹 검증
-        const group = await Group.findById(groupId);
+                // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
+                const groups = await Group.find().sort({ createdAt: -1 });
+
+                // 인덱스에 해당하는 그룹 조회
+                const group = groups[index];
+        
         if (!group) {
             console.error('Group not found for ID:', groupId);
             return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
