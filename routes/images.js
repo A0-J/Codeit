@@ -40,7 +40,8 @@ router.post('/', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: "이미지가 없습니다" });
         }
 
-        const imageUrl = req.file.location; // S3에서 업로드된 파일의 URL
+        const bucketUrl = process.env.AWS_S3_BUCKET_URL;
+        const imageUrl = `${bucketUrl}/${req.file.key}`; // S3에서 업로드된 파일의 URL
 
         // 데이터베이스에 이미지 정보 저장
         const newImage = new Image({
@@ -52,12 +53,13 @@ router.post('/', upload.single('image'), async (req, res) => {
 
         return res.status(200).json({ imageUrl });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error occurred:', error);
 
-        // 오류 처리
         if (error instanceof multer.MulterError) {
             return res.status(400).json({ message: "파일 업로드 오류", error: error.message });
-        } else if (error.name === 'ValidationError') {
+        }
+
+        if (error.name === 'ValidationError') {
             return res.status(400).json({ message: "데이터베이스 검증 오류", error: error.message });
         }
 
@@ -66,3 +68,4 @@ router.post('/', upload.single('image'), async (req, res) => {
 });
 
 export default router;
+
