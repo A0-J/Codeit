@@ -417,9 +417,15 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
         if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
+                // 그룹 인덱스 변환
+                const index = parseInt(groupId, 10);
 
+                  // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
+                  const groups = await Group.find().sort({ createdAt: -1 });
+
+                  // 인덱스에 해당하는 그룹 조회
+                  group = groups[index];
         // 그룹 ID 검증
-        const group = await Group.findById(groupId);
         if (!group) {
             return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
         }
