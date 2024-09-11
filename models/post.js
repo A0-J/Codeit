@@ -1,8 +1,11 @@
 import mongoose from 'mongoose';
 
-// 게시글 스키마 정의
 const PostSchema = new mongoose.Schema(
   {
+    postId: {
+      type: String,
+      unique: true,
+    },
     groupId: {
       type: String,
       required: true,
@@ -29,15 +32,15 @@ const PostSchema = new mongoose.Schema(
     },
     imageUrl: {
       type: String,
-      required: false, // 선택적 필드
+      required: false,
     },
     tags: {
       type: [String],
-      required: false, // 선택적 필드
+      required: false,
     },
     location: {
       type: String,
-      required: false, // 선택적 필드
+      required: false,
     },
     moment: {
       type: Date,
@@ -57,11 +60,20 @@ const PostSchema = new mongoose.Schema(
     }
   },
   {
-    timestamps: true, // createdAt, updatedAt 자동 생성
+    timestamps: true,
   }
 );
 
-// Post 모델 정의
+PostSchema.pre('save', function(next) {
+  if (this.isNew) {
+    // 현재 시간을 기반으로 ID 생성 (예: 202409110001)
+    const datePrefix = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 12); // YYYYMMDDHHmm
+    this.postId = datePrefix + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0');
+  }
+  next();
+});
+
 const Post = mongoose.model('Post', PostSchema);
 
 export default Post;
+
