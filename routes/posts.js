@@ -216,7 +216,7 @@ postRouter.route('/posts/:postId/verify-password')
         }
     });
 
-    router.post('/posts/:postId/like', async (req, res) => {
+postRouter.post('/posts/:postId/like', async (req, res) => {
         try {
             const { postId } = req.params;
     
