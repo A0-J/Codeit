@@ -115,12 +115,12 @@ postRouter.route('/groups/:groupId/posts')
             }
     
             // 그룹 인덱스에 해당하는 그룹을 조회
-            const group = await Group.findOne().skip(groupIndexNumber).exec();
-            if (!group) {
+            const group = await Group.find().skip(groupIndexNumber).limit(1).exec();
+            if (!group.length) {
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
     
-            const groupIdString = group._id.toString();  // 그룹 ObjectId를 문자열로 변환
+            const groupIdString = group[0]._id.toString();  // 그룹 ObjectId를 문자열로 변환
     
             // 필터링 조건
             const filterConditions = {
@@ -171,6 +171,7 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
+    
     
 
 // 게시글 수정 및 삭제, 상세 정보 조회    
