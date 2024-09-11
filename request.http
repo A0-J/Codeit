@@ -76,11 +76,11 @@ Content-Type: application/json
 }
 
 ### 게시글 상세 정보 조회
-POST https://codeit-demo-be.onrender.com/posts/0
+GET https://codeit-demo-be.onrender.com/posts/0
 Content-Type: application/json
 
 ### 게시글 공감하기
-GET https://codeit-demo-be.onrender.com/posts/0/like
+POST https://codeit-demo-be.onrender.com/posts/0/like
 Content-Type: application/json
 
 ###게시글 조회 권한 확인### z

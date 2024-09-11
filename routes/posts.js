@@ -216,32 +216,31 @@ postRouter.route('/posts/:postId/verify-password')
         }
     });
 
-postRouter.route('/posts/:postId/like')
-    .post(async (req, res) => { // 게시글 공감하기
+    router.post('/posts/:postId/like', async (req, res) => {
         try {
             const { postId } = req.params;
-
-            // 인덱스 변환 및 게시글 조회
-            const index = parseInt(postId, 10);
-            const posts = await Post.find().sort({ createdAt: -1 });
-
-            // 인덱스에 해당하는 게시글 조회
-            const post = posts[index];
-
-            // 게시글이 존재하지 않는 경우 404 에러 반환
+    
+            // postId 유효성 검증 (MongoDB ObjectId 형식 체크)
+            if (!mongoose.Types.ObjectId.isValid(postId)) {
+                return res.status(400).json({ message: "잘못된 요청입니다" });
+            }
+    
+            // postId로 게시글 조회
+            const post = await Post.findById(postId);
+    
             if (!post) {
                 return res.status(404).json({ message: "존재하지 않습니다" });
             }
-
+    
             // 게시글의 likeCount를 1 증가시킵니다.
             post.likeCount += 1;
-
+    
             // 업데이트된 게시글을 저장합니다.
             await post.save();
-
+    
             // 성공적으로 공감이 추가되었음을 나타내는 응답
             return res.status(200).json({ message: "게시글 공감하기 성공" });
-
+    
         } catch (error) {
             // 서버 오류 처리
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
