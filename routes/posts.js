@@ -137,13 +137,18 @@ postRouter.route('/posts/:postId')
         try {
             const { postId } = req.params;
     
-            // 필수 필드 검증 및 MongoDB ObjectId 형식 확인
-            if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
+            // 필수 필드 검증
+            if (!postId || isNaN(parseInt(postId, 10))) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
     
-            // postId로 게시글 조회
-            const post = await Post.findById(postId);
+            const index = parseInt(postId, 10);
+    
+            // 전체 게시글 조회 (페이징 처리나 성능 최적화 고려 필요)
+            const posts = await Post.find().sort({ createdAt: -1 });
+    
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
     
             // 게시글이 존재하지 않는 경우
             if (!post) {
