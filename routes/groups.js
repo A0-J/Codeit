@@ -374,59 +374,36 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
             moment,
             isPublic
         } = req.body;
-        
+
         const { groupId } = req.params;
 
-        // 요청 파라미터 검증
         if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
-            return res.status(400).json({ message: "잘못된 요청입니다. 필수 파라미터가 누락되었습니다." });
+            return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
-        const group = await Group.findById(groupId);
-
-        // 그룹 ID 검증
-        if (!group) {
-            return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
-        }
-
-        // 파일 업로드 처리
         let imageUrl = '';
         if (req.file) {
-            try {
-                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            } catch (fileError) {
-                console.error('Error processing file:', fileError);
-                return res.status(500).json({ message: "파일 처리 중 오류 발생", error: fileError.message });
-            }
+            imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
         }
 
-        let savedPost;
-        try {
-            // 새 게시글 생성
-            const newPost = new Post({
-                groupId: group._id,  // 그룹 ID를 문자열로 저장
-                nickname,
-                title,
-                content,
-                postPassword,
-                groupPassword,
-                imageUrl,
-                tags: tags || [],
-                location: location || '',
-                moment: moment ? new Date(moment) : new Date(),
-                isPublic,
-                likeCount: 0,
-                commentCount: 0,
-            });
+        const newPost = new Post({
+            groupId: groupId, // No conversion to Number, assuming groupId is a string
+            nickname,
+            title,
+            content,
+            postPassword,
+            groupPassword,
+            imageUrl: imageUrl || '',
+            tags: tags || [],
+            location: location || '',
+            moment: moment ? new Date(moment) : new Date(),
+            isPublic,
+            likeCount: 0,
+            commentCount: 0,
+        });
 
-            // 게시글 저장
-            savedPost = await newPost.save();
-        } catch (postError) {
-            console.error('Error saving post:', postError);
-            return res.status(500).json({ message: "게시글 저장 중 오류 발생", error: postError.message });
-        }
+        const savedPost = await newPost.save();
 
-        // 200 OK 응답 반환
         return res.status(200).json({
             id: savedPost._id,
             groupId: savedPost.groupId,
@@ -443,8 +420,7 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
             createdAt: savedPost.createdAt.toISOString(),
         });
     } catch (error) {
-        console.error('Unexpected error creating post:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
 
@@ -456,89 +432,59 @@ router.get('/:groupId/posts', async (req, res) => {
 
         const pageNumber = Number(page);
         const pageSizeNumber = Number(pageSize);
+        const groupIdNumber = groupId;
         const isPublicBoolean = isPublic === 'true';
 
         // 요청 파라미터 유효성 검사
-        if (isNaN(pageNumber) || isNaN(pageSizeNumber)) {
-            console.error('Invalid request parameters:', { pageNumber, pageSizeNumber });
+        if (isNaN(pageNumber) || isNaN(pageSizeNumber) || !groupIdNumber) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
-
-        const group = await Group.findById(groupId);
-
-        // 필터링 조건 설정
+        // 필터링 조건
         const filterConditions = {
-            groupId: group._id,  // 그룹 ObjectId를 문자열로 변환
+            groupId: groupIdNumber,
             isPublic: isPublicBoolean,
             title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
         };
 
-        // 정렬 조건 설정
+        // 정렬 조건
         let sortConditions;
-        try {
-            if (sortBy === 'latest') {
-                sortConditions = { createdAt: -1 };
-            } else if (sortBy === 'mostCommented') {
-                sortConditions = { commentCount: -1 };
-            } else if (sortBy === 'mostLiked') {
-                sortConditions = { likeCount: -1 };
-            } else {
-                console.error('Invalid sortBy value:', sortBy);
-                return res.status(400).json({ message: "잘못된 정렬 기준입니다" });
-            }
-        } catch (sortError) {
-            console.error('Error setting sort conditions:', sortError);
-            return res.status(500).json({ message: "정렬 조건 설정 중 오류 발생", error: sortError.message });
-        }
-
-        // 총 게시글 수 조회
-        let totalItemCount;
-        try {
-            totalItemCount = await Post.countDocuments(filterConditions);
-        } catch (countError) {
-            console.error('Error counting posts:', countError);
-            return res.status(500).json({ message: "게시글 수 조회 중 오류 발생", error: countError.message });
+        if (sortBy === 'latest') {
+            sortConditions = { createdAt: -1 };
+        } else if (sortBy === 'mostCommented') {
+            sortConditions = { commentCount: -1 };
+        } else if (sortBy === 'mostLiked') {
+            sortConditions = { likeCount: -1 };
         }
 
         // 게시글 목록 조회
-        let posts;
-        try {
-            posts = await Post.find(filterConditions)
-                .sort(sortConditions)
-                .skip((pageNumber - 1) * pageSizeNumber)
-                .limit(pageSizeNumber);
-        } catch (postsError) {
-            console.error('Error retrieving posts:', postsError);
-            return res.status(500).json({ message: "게시글 조회 중 오류 발생", error: postsError.message });
-        }
-
-        // 총 페이지 수 계산
+        const totalItemCount = await Post.countDocuments(filterConditions);
         const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
+        const posts = await Post.find(filterConditions)
+            .sort(sortConditions)
+            .skip((pageNumber - 1) * pageSizeNumber)
+            .limit(pageSizeNumber);
 
-        // 200 OK 응답 반환
+        // 데이터 변환
+        const formattedPosts = posts.map(post => ({
+            id: post._id,
+            name: post.title,  // assuming 'title' is used as 'name' here
+            imageUrl: post.imageUrl || '',  // assuming there's an 'imageUrl' field
+            isPublic: post.isPublic,
+            likeCount: post.likeCount,
+            badgeCount: post.badgeCount || 0,  // defaulting to 0 if not present
+            postCount: post.postCount || 0,    // defaulting to 0 if not present
+            createdAt: post.createdAt.toISOString(),
+            introduction: post.introduction || ''  // defaulting to empty string if not present
+        }));
+
         return res.status(200).json({
             currentPage: pageNumber,
-            totalPages,
-            totalItemCount,
-            data: posts.map(post => ({
-                id: post._id,
-                groupId: post.groupId,
-                nickname: post.nickname,
-                title: post.title,
-                content: post.content,
-                imageUrl: post.imageUrl,
-                tags: post.tags,
-                location: post.location,
-                moment: post.moment.toISOString().split('T')[0],
-                isPublic: post.isPublic,
-                likeCount: post.likeCount,
-                commentCount: post.commentCount,
-                createdAt: post.createdAt.toISOString(),
-            }))
+            totalPages: totalPages,
+            totalItemCount: totalItemCount,
+            data: formattedPosts
         });
     } catch (error) {
-        console.error('Unexpected error:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
 
