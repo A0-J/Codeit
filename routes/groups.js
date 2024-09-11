@@ -403,7 +403,7 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
         try {
             // 새 게시글 생성
             const newPost = new Post({
-                groupId: group._id.toString(),  // 그룹 ID를 문자열로 저장
+                groupId: group._id,  // 그룹 ID를 문자열로 저장
                 nickname,
                 title,
                 content,
@@ -467,7 +467,7 @@ router.get('/:groupId/posts', async (req, res) => {
 
         // 필터링 조건 설정
         const filterConditions = {
-            groupId: group._id.toString(),  // 그룹 ObjectId를 문자열로 변환
+            groupId: group._id,  // 그룹 ObjectId를 문자열로 변환
             isPublic: isPublicBoolean,
             title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
         };
