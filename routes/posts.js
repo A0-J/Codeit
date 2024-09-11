@@ -101,79 +101,53 @@ postRouter.route('/groups/:groupId/posts')
     })
     .get(async (req, res) => {
         try {
-            const { groupId } = req.params;
-            const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic = 'true' } = req.query;
+            const { groupIndex } = req.params; // 그룹 인덱스 받기
+            const { keyword = '', sortBy = 'createdAt', isPublic = 'true', page = '1', pageSize = '10' } = req.query;
     
-            const pageNumber = Number(page);
-            const pageSizeNumber = Number(pageSize);
-            const groupObjectId = groupId;  // 그룹 ID가 실제 ObjectId라 가정
-            const isPublicBoolean = isPublic === 'true';
+            // 페이지 번호와 페이지 사이즈를 숫자로 변환
+            const pageNumber = parseInt(page, 10);
+            const pageSizeNumber = parseInt(pageSize, 10);
     
-            // groupId가 유효한 ObjectId인지 확인
-            if (!mongoose.Types.ObjectId.isValid(groupObjectId)) {
-                return res.status(400).json({ message: "잘못된 그룹 ID입니다" });
-            }
+            // 그룹 인덱스를 기반으로 그룹 ID 가져오기
+            const groups = await Group.find().exec(); // 모든 그룹을 가져옴
+            const group = groups[parseInt(groupIndex, 10)]; // 인덱스에 해당하는 그룹을 가져옴
     
-            // 그룹 조회
-            const group = await Group.findById(groupObjectId).exec();
             if (!group) {
-                return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
+                return res.status(404).json({ message: 'Group not found' });
             }
     
-            // 필터링 조건
-            const filterConditions = {
-                groupId: groupObjectId,
-                isPublic: isPublicBoolean,
-                title: new RegExp(keyword, 'i')
-            };
+            const groupId = group._id; // 그룹 ID
     
-            // 정렬 조건
-            let sortConditions;
-            switch (sortBy) {
-                case 'latest':
-                    sortConditions = { createdAt: -1 };
-                    break;
-                case 'mostCommented':
-                    sortConditions = { commentCount: -1 };
-                    break;
-                case 'mostLiked':
-                    sortConditions = { likeCount: -1 };
-                    break;
-                default:
-                    sortConditions = { createdAt: -1 };
-                    break;
+            // 게시글 필터링 조건 설정
+            const query = { groupId, isPublic: isPublic === 'true' };
+            if (keyword) {
+                query.title = { $regex: keyword, $options: 'i' }; // 제목에 키워드가 포함된 게시글 검색
             }
     
-            // 게시글 목록 조회
-            const totalItemCount = await Post.countDocuments(filterConditions);
-            const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
-            const posts = await Post.find(filterConditions)
-                .sort(sortConditions)
+            // 게시글 정렬 설정
+            const sortOptions = {};
+            sortOptions[sortBy] = -1; // 내림차순 정렬
+    
+            // 게시글 검색 및 페이징
+            const posts = await Post.find(query)
+                .sort(sortOptions)
                 .skip((pageNumber - 1) * pageSizeNumber)
-                .limit(pageSizeNumber);
+                .limit(pageSizeNumber)
+                .exec();
     
-            // 데이터 변환
-            const formattedPosts = posts.map(post => ({
-                id: post._id,
-                name: post.title,
-                imageUrl: post.imageUrl || '',
-                isPublic: post.isPublic,
-                likeCount: post.likeCount,
-                badgeCount: post.badgeCount || 0,
-                postCount: post.postCount || 0,
-                createdAt: post.createdAt.toISOString(),
-                introduction: post.introduction || ''
-            }));
+            // 총 게시글 수
+            const totalPosts = await Post.countDocuments(query).exec();
     
-            return res.status(200).json({
-                currentPage: pageNumber,
-                totalPages: totalPages,
-                totalItemCount: totalItemCount,
-                data: formattedPosts
+            // 응답 데이터
+            res.json({
+                posts,
+                totalPosts,
+                page: pageNumber,
+                pageSize: pageSizeNumber
             });
         } catch (error) {
-            console.error(error);  // 콘솔에 오류 로그를 추가하여 문제를 추적
-            return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+            console.error('Error fetching posts:', error);
+            res.status(500).json({ message: 'Internal Server Error' });
         }
     });
 
