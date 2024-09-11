@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 게시글 작성 API
-postRouter.route('/groups/:groupId')
+postRouter.route('/groups/:groupId/posts')
     .post(upload.single('image'), async (req, res) => {
         try {
             const {
@@ -37,9 +37,23 @@ postRouter.route('/groups/:groupId')
                 isPublic
             } = req.body;
 
-            const { groupId } = req.params;
+            const { groupId } = req.params;  // groupId를 인덱스로 받아옴
 
-            if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
+            // groupId가 숫자인지 확인
+            const groupIndexNumber = Number(groupId);
+            if (isNaN(groupIndexNumber)) {
+                return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
+            }
+
+            // 그룹 인덱스에 해당하는 그룹을 조회
+            const group = await Group.findOne().skip(groupIndexNumber).exec();
+            if (!group) {
+                return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
+            }
+
+            const groupObjectId = group._id;  // 실제 그룹 ObjectId
+
+            if (!nickname || !title || !content || !postPassword || !groupPassword || !groupObjectId) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
@@ -49,7 +63,7 @@ postRouter.route('/groups/:groupId')
             }
 
             const newPost = new Post({
-                groupId: groupId, // No conversion to Number, assuming groupId is a string
+                groupId: groupObjectId, // 실제 그룹 ObjectId 사용
                 nickname,
                 title,
                 content,
@@ -92,16 +106,25 @@ postRouter.route('/groups/:groupId')
 
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
-            const groupIdNumber = groupId;
+            const groupIndexNumber = Number(groupId);
             const isPublicBoolean = isPublic === 'true';
 
-            // 요청 파라미터 유효성 검사
-            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || !groupIdNumber) {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
+            // groupId가 숫자인지 확인
+            if (isNaN(groupIndexNumber)) {
+                return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
             }
+
+            // 그룹 인덱스에 해당하는 그룹을 조회
+            const group = await Group.findOne().skip(groupIndexNumber).exec();
+            if (!group) {
+                return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
+            }
+
+            const groupObjectId = group._id;  // 실제 그룹 ObjectId
+
             // 필터링 조건
             const filterConditions = {
-                groupId: groupIdNumber,
+                groupId: groupObjectId,  // 그룹 ObjectId 사용
                 isPublic: isPublicBoolean,
                 title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
@@ -127,14 +150,14 @@ postRouter.route('/groups/:groupId')
             // 데이터 변환
             const formattedPosts = posts.map(post => ({
                 id: post._id,
-                name: post.title,  // assuming 'title' is used as 'name' here
-                imageUrl: post.imageUrl || '',  // assuming there's an 'imageUrl' field
+                name: post.title,
+                imageUrl: post.imageUrl || '',
                 isPublic: post.isPublic,
                 likeCount: post.likeCount,
-                badgeCount: post.badgeCount || 0,  // defaulting to 0 if not present
-                postCount: post.postCount || 0,    // defaulting to 0 if not present
+                badgeCount: post.badgeCount || 0,
+                postCount: post.postCount || 0,
                 createdAt: post.createdAt.toISOString(),
-                introduction: post.introduction || ''  // defaulting to empty string if not present
+                introduction: post.introduction || ''
             }));
 
             return res.status(200).json({
