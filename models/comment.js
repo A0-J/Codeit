@@ -11,8 +11,12 @@ const CommentSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        password: {  // 비밀번호 필드 추가
+        password: {  // 비밀번호 필드
             type: String,
+            required: true,
+        },
+        postIndex: {  // 게시글의 인덱스를 저장
+            type: Number,
             required: true,
         }
     },

@@ -288,7 +288,7 @@ postRouter.route('/posts/:postId/comments')
     .post(async (req, res) => {
         try {
             const { nickname, content, password } = req.body;
-            const { postId} = req.params; // URL 파라미터에서 postIndex 추출
+            const { postId } = req.params; // URL 파라미터에서 postId 추출
 
             // 인덱스 변환 및 게시글 조회
             const index = parseInt(postId, 10);
@@ -306,8 +306,13 @@ postRouter.route('/posts/:postId/comments')
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
 
-            // 새로운 댓글 생성 (게시글의 ObjectId를 postId로 사용)
-            const newComment = new Comment({ nickname, content, password });
+            // 새로운 댓글 생성 (게시글의 인덱스(postId)를 저장)
+            const newComment = new Comment({
+                nickname,
+                content,
+                password,
+                postIndex: index // 댓글에 게시글의 인덱스를 저장
+            });
 
             // 댓글 저장
             await newComment.save();
@@ -344,8 +349,8 @@ postRouter.route('/posts/:postId/comments')
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
 
-            // 필터 조건 생성 (해당 게시글의 postId를 기반으로 댓글 조회)
-            const filterConditions = {};
+            // 필터 조건 생성 (해당 게시글의 postIndex를 기반으로 댓글 조회)
+            const filterConditions = { postIndex: index };
 
             // commentId가 있는 경우, ObjectId로 변환하여 필터링
             if (commentId) {
@@ -382,5 +387,6 @@ postRouter.route('/posts/:postId/comments')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
         }
     });
+
 
 export default postRouter;
