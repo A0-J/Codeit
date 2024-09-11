@@ -463,7 +463,7 @@ router.get('/:groupId/posts', async (req, res) => {
 
         // 필터링 조건 설정
         const filterConditions = {
-            groupId: groupId, // groupId를 문자열로 사용
+            groupId: groupId,
             isPublic: isPublicBoolean,
             title: new RegExp(keyword, 'i') // 대소문자 구분 없이 검색
         };
@@ -488,22 +488,21 @@ router.get('/:groupId/posts', async (req, res) => {
             .skip((pageNumber - 1) * pageSizeNumber)
             .limit(pageSizeNumber);
 
-        if (!posts || posts.length === 0) {
-            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
-        }
-
-
         // 데이터 변환
         const formattedPosts = posts.map(post => ({
             id: post._id,
-            name: post.title, // assuming 'title' is used as 'name' here
-            imageUrl: post.imageUrl || '', // assuming there's an 'imageUrl' field
+            groupId: post.groupId,
+            nickname: post.nickname || '', // assuming there's a 'nickname' field
+            title: post.title,
+            content: post.content || '', // assuming there's a 'content' field
+            imageUrl: post.imageUrl || '',
+            tags: post.tags || [], // assuming there's a 'tags' field
+            location: post.location || '',
+            moment: post.moment ? post.moment.toISOString().split('T')[0] : '', // format date as 'YYYY-MM-DD'
             isPublic: post.isPublic,
             likeCount: post.likeCount,
-            badgeCount: post.badgeCount || 0, // defaulting to 0 if not present
-            postCount: post.postCount || 0, // defaulting to 0 if not present
+            commentCount: post.commentCount,
             createdAt: post.createdAt.toISOString(),
-            introduction: post.introduction || '' // defaulting to empty string if not present
         }));
 
         return res.status(200).json({
@@ -513,10 +512,11 @@ router.get('/:groupId/posts', async (req, res) => {
             data: formattedPosts
         });
     } catch (error) {
-        console.error('서버 오류:', error); // 디버깅을 위해 오류 로그 추가
+        console.error('서버 오류:', error);
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
+
 
 
 export default router;
