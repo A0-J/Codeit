@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Post from '../models/post.js';
 import multer from 'multer';
 import fs from 'fs';
