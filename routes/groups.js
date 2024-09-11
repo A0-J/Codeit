@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import multer from 'multer';
 import fs from 'fs';
 import Group from '../models/group.js';
+import Post from '../models/post.js';
 import Image from '../models/image.js';  // Mongoose Image 모델을 가져옵니다.
 import { checkAndAssignBadges } from '../services/badgeService.js';  
 
