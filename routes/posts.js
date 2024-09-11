@@ -1,7 +1,6 @@
 import express from 'express';
 import Post from '../models/post.js';
 import multer from 'multer';
-import Group from '../models/group.js';
 import fs from 'fs';
 
 const postRouter = express.Router();
