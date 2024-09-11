@@ -132,23 +132,28 @@ postRouter.route('/posts/:postId')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     })
-    .get(async (req, res) => { //게시글 상세 정보 조회
+    .get(async (req, res) => { // 게시글 상세 정보 조회
         try {
             const { postId } = req.params;
-
+    
             // 필수 필드 검증
-            if (!postId || !mongoose.Types.ObjectId.isValid(postId))  {
+            if (!postId || isNaN(parseInt(postId, 10))) {
                 return res.status(400).json({ message: "잘못된 요청입니다" });
             }
-
-            // 게시글 찾기
-            const post = await Post.findById(postId);
-
+    
+            const index = parseInt(postId, 10);
+    
+            // 전체 게시글 조회 (페이징 처리나 성능 최적화 고려 필요)
+            const posts = await Post.find().sort({ createdAt: -1 });
+    
+            // 인덱스에 해당하는 게시글 조회
+            const post = posts[index];
+    
             // 게시글이 존재하지 않는 경우
             if (!post) {
                 return res.status(404).json({ message: "존재하지 않습니다" });
             }
-
+    
             // 게시글 정보 반환
             return res.status(200).json({
                 id: post._id,
@@ -166,10 +171,10 @@ postRouter.route('/posts/:postId')
                 createdAt: post.createdAt,
             });
         } catch (error) {
+            console.error('Error retrieving post:', error);
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
-
 
 //별도로 분리된 라우팅들
 
