@@ -121,9 +121,7 @@ postRouter.route('/groups/:groupId/posts')
 
             // 필터링 조건
             const filterConditions = {
-                groupId: groupIdString,
                 isPublic: isPublicBoolean,
-                title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
 
             // 정렬 조건
