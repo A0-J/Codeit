@@ -33,7 +33,7 @@ Content-Type: application/json
 }
 ###
 #게시글 조회
-GET https://codeit-demo-be.onrender.com/groups/0/posts
+GET https://codeit-demo-be.onrender.com/groups/0/posts 
 Content-Type: application/json
 ###
 # 게시글 목록 조회 - 최신 게시글 기준
