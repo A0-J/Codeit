@@ -414,42 +414,65 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
         
         const { groupId } = req.params;
 
+        // 요청 파라미터 검증
         if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
+            return res.status(400).json({ message: "잘못된 요청입니다. 필수 파라미터가 누락되었습니다." });
         }
-                // 그룹 인덱스 변환
-                const index = parseInt(groupId, 10);
 
-                  // 전체 그룹 목록 조회 (페이징 처리나 성능 최적화 고려 필요)
-                  const groups = await Group.find().sort({ createdAt: -1 });
+        let group;
+        try {
+            // 그룹 인덱스 변환 및 조회
+            const index = parseInt(groupId, 10);
+            const groups = await Group.find().sort({ createdAt: -1 });
+            group = groups[index];
+        } catch (groupError) {
+            console.error('Error retrieving groups:', groupError);
+            return res.status(500).json({ message: "그룹 조회 중 오류 발생", error: groupError.message });
+        }
 
-                  // 인덱스에 해당하는 그룹 조회
-                  group = groups[index];
         // 그룹 ID 검증
         if (!group) {
             return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
         }
 
-        const imageUrl = req.file ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}` : '';
+        // 파일 업로드 처리
+        let imageUrl = '';
+        if (req.file) {
+            try {
+                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            } catch (fileError) {
+                console.error('Error processing file:', fileError);
+                return res.status(500).json({ message: "파일 처리 중 오류 발생", error: fileError.message });
+            }
+        }
 
-        const newPost = new Post({
-            groupId: group._id.toString(),  // 그룹 ID를 문자열로 저장
-            nickname,
-            title,
-            content,
-            postPassword,
-            groupPassword,
-            imageUrl,
-            tags: tags || [],
-            location: location || '',
-            moment: moment ? new Date(moment) : new Date(),
-            isPublic,
-            likeCount: 0,
-            commentCount: 0,
-        });
+        let savedPost;
+        try {
+            // 새 게시글 생성
+            const newPost = new Post({
+                groupId: group._id.toString(),  // 그룹 ID를 문자열로 저장
+                nickname,
+                title,
+                content,
+                postPassword,
+                groupPassword,
+                imageUrl,
+                tags: tags || [],
+                location: location || '',
+                moment: moment ? new Date(moment) : new Date(),
+                isPublic,
+                likeCount: 0,
+                commentCount: 0,
+            });
 
-        const savedPost = await newPost.save();
+            // 게시글 저장
+            savedPost = await newPost.save();
+        } catch (postError) {
+            console.error('Error saving post:', postError);
+            return res.status(500).json({ message: "게시글 저장 중 오류 발생", error: postError.message });
+        }
 
+        // 200 OK 응답 반환
         return res.status(200).json({
             id: savedPost._id,
             groupId: savedPost.groupId,
@@ -466,8 +489,8 @@ router.post('/:groupId/posts', upload.single('image'), async (req, res) => {
             createdAt: savedPost.createdAt.toISOString(),
         });
     } catch (error) {
-        console.error('Error creating post:', error);
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
+        console.error('Unexpected error creating post:', error);
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
 
