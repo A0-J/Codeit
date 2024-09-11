@@ -1,19 +1,15 @@
 #/api/groups/{groupId}/posts
-POST http://localhost:3000/api/groups/123/posts
+POST https://codeit-demo-be.onrender.com/groups
 Content-Type: application/json
 
 {
-  "nickname": "JaneDoe",
-  "title": "A Unique Post Title",
-  "content": "This is the content of a new and unique post.",
-  "postPassword": "5678",
-  "groupPassword": "abcd",
-  "imageUrl": "http://example.com/image3.png",
-  "tags": ["tag3", "tag4"],
-  "location": "Incheon",
-  "moment": "2024-03-02",
-  "isPublic": true
+  "name": "Example Group",
+  "password": "examplepassword",
+  "isPublic": false,
+  "introduction": "This is an example group introduction.",
+  "imageUrl": "http://example.com/example-image.jpg"
 }
+
 ### Create a new post
 
 POST https://codeit-demo-be.onrender.com/groups/66e1ac018d1b2b2abd84b262/posts 
