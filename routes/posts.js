@@ -37,10 +37,15 @@ postRouter.route('/groups/:groupId/posts')
                 isPublic
             } = req.body;
 
-            const { groupId } = req.params;  // groupId를 인덱스로 받아옴
+            const { groupId } = req.params;
 
-            // groupId가 숫자인지 확인
+            if (!nickname || !title || !content || !postPassword || !groupPassword || !groupId) {
+                return res.status(400).json({ message: "잘못된 요청입니다" });
+            }
+
+            // 그룹 인덱스 변환
             const groupIndexNumber = Number(groupId);
+
             if (isNaN(groupIndexNumber)) {
                 return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
             }
@@ -51,25 +56,16 @@ postRouter.route('/groups/:groupId/posts')
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
 
-            const groupObjectId = group._id;  // 실제 그룹 ObjectId
-
-            if (!nickname || !title || !content || !postPassword || !groupPassword || !groupObjectId) {
-                return res.status(400).json({ message: "잘못된 요청입니다" });
-            }
-
-            let imageUrl = '';
-            if (req.file) {
-                imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-            }
+            const imageUrl = req.file ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}` : '';
 
             const newPost = new Post({
-                groupId: groupObjectId, // 실제 그룹 ObjectId 사용
+                groupId: group._id.toString(), // 그룹 ID를 문자열로 저장
                 nickname,
                 title,
                 content,
                 postPassword,
                 groupPassword,
-                imageUrl: imageUrl || '',
+                imageUrl,
                 tags: tags || [],
                 location: location || '',
                 moment: moment ? new Date(moment) : new Date(),
@@ -96,45 +92,40 @@ postRouter.route('/groups/:groupId/posts')
                 createdAt: savedPost.createdAt.toISOString(),
             });
         } catch (error) {
+            console.error('Error creating post:', error);
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     })
     .get(async (req, res) => {  // 게시글 목록 조회 API
         try {
-            const { groupId } = req.params;  // 그룹 인덱스 받기
+            const { groupId } = req.params;
             const { page = 1, pageSize = 10, sortBy = 'latest', keyword = '', isPublic = 'true' } = req.query;
-    
+
             const pageNumber = Number(page);
             const pageSizeNumber = Number(pageSize);
-            const groupIndexNumber = Number(groupId);  // 그룹 인덱스
+            const groupIndexNumber = Number(groupId);
             const isPublicBoolean = isPublic === 'true';
-    
-            console.log(`Group Index Number: ${groupIndexNumber}`);
-    
-            // 그룹 인덱스가 숫자인지 확인
-            if (isNaN(groupIndexNumber)) {
-                return res.status(400).json({ message: "잘못된 그룹 인덱스입니다" });
+
+            // 요청 파라미터 유효성 검사
+            if (isNaN(pageNumber) || isNaN(pageSizeNumber) || isNaN(groupIndexNumber)) {
+                return res.status(400).json({ message: "잘못된 요청입니다" });
             }
-    
+
             // 그룹 인덱스에 해당하는 그룹을 조회
-            const group = await Group.find().skip(groupIndexNumber).limit(1).exec();
-            console.log(`Group Found: ${JSON.stringify(group)}`);
-            if (!group.length) {
+            const group = await Group.findOne().skip(groupIndexNumber).exec();
+            if (!group) {
                 return res.status(404).json({ message: "해당 그룹을 찾을 수 없습니다" });
             }
-    
-            const groupIdString = group[0]._id.toString();  // 그룹 ObjectId를 문자열로 변환
-            console.log(`Group ID String: ${groupIdString}`);
-    
+
+            const groupIdString = group._id.toString();  // 그룹 ObjectId를 문자열로 변환
+
             // 필터링 조건
             const filterConditions = {
-                groupId: groupIdString,  // 그룹 ID를 문자열로 사용
+                groupId: groupIdString,
                 isPublic: isPublicBoolean,
                 title: new RegExp(keyword, 'i')  // 대소문자 구분 없이 검색
             };
-    
-            console.log(`Filter Conditions: ${JSON.stringify(filterConditions)}`);
-    
+
             // 정렬 조건
             let sortConditions;
             if (sortBy === 'latest') {
@@ -144,18 +135,15 @@ postRouter.route('/groups/:groupId/posts')
             } else if (sortBy === 'mostLiked') {
                 sortConditions = { likeCount: -1 };
             }
-            console.log(`Sort Conditions: ${JSON.stringify(sortConditions)}`);
-    
+
             // 게시글 목록 조회
             const totalItemCount = await Post.countDocuments(filterConditions);
-            console.log(`Total Item Count: ${totalItemCount}`);
             const totalPages = Math.ceil(totalItemCount / pageSizeNumber);
             const posts = await Post.find(filterConditions)
                 .sort(sortConditions)
                 .skip((pageNumber - 1) * pageSizeNumber)
                 .limit(pageSizeNumber);
-            console.log(`Posts: ${JSON.stringify(posts)}`);
-    
+
             // 데이터 변환
             const formattedPosts = posts.map(post => ({
                 id: post._id,
@@ -168,7 +156,7 @@ postRouter.route('/groups/:groupId/posts')
                 createdAt: post.createdAt.toISOString(),
                 introduction: post.introduction || ''
             }));
-    
+
             return res.status(200).json({
                 currentPage: pageNumber,
                 totalPages: totalPages,
@@ -180,6 +168,7 @@ postRouter.route('/groups/:groupId/posts')
             return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
         }
     });
+
     
     
     
