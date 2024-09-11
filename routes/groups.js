@@ -164,7 +164,6 @@ router.get('/', async (req, res) => {
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error });
     }
 });
-//그룹 목록 수정 API
 router.put('/:groupId', upload.single('image'), async (req, res) => {
     try {
         const { groupId } = req.params;
