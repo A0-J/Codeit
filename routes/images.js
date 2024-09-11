@@ -35,13 +35,13 @@ const upload = multer({
 
 // 이미지 업로드 및 URL 생성 API
 router.post('/', upload.single('image'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "이미지가 없습니다" });
-    }
-
-    const imageUrl = req.file.location; // S3에서 업로드된 파일의 URL
-
     try {
+        if (!req.file) {
+            return res.status(400).json({ message: "이미지가 없습니다" });
+        }
+
+        const imageUrl = req.file.location; // S3에서 업로드된 파일의 URL
+
         // 데이터베이스에 이미지 정보 저장
         const newImage = new Image({
             filename: req.file.key,
@@ -51,15 +51,17 @@ router.post('/', upload.single('image'), async (req, res) => {
         await newImage.save();
 
         return res.status(200).json({ imageUrl });
-    } catch (dbError) {
-        console.error('Error saving image to database:', dbError);
+    } catch (error) {
+        console.error('Error:', error);
 
-        // 데이터베이스 관련 오류에 대한 세부적인 처리
-        if (dbError.name === 'ValidationError') {
-            return res.status(400).json({ message: "데이터베이스 검증 오류", error: dbError.message });
+        // 오류 처리
+        if (error instanceof multer.MulterError) {
+            return res.status(400).json({ message: "파일 업로드 오류", error: error.message });
+        } else if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: "데이터베이스 검증 오류", error: error.message });
         }
 
-        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: dbError.message });
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
 
