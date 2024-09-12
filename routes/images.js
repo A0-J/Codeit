@@ -40,21 +40,20 @@ router.post('/', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: "이미지가 없습니다" });
         }
 
-        const bucketUrl = process.env.AWS_S3_BUCKET_URL;
-        const imageUrl = `${bucketUrl}/${req.file.key}`; // S3에서 업로드된 파일의 URL
+        // S3에서 업로드된 파일의 URL
+        const imageUrl = req.file.location;
 
-               // 데이터베이스에 이미지 정보 저장
-               try {
-                const newImage = new Image({
-                    filename: req.file.key,
-                    url: imageUrl
-                });
-                await newImage.save();
-            } catch (dbError) {
-                console.error('데이터베이스 저장 오류:', dbError);
-                return res.status(500).json({ message: "데이터베이스 저장 중 오류가 발생했습니다", error: dbError.message });
-            }
-    
+        // 데이터베이스에 이미지 정보 저장
+        try {
+            const newImage = new Image({
+                filename: req.file.key,
+                url: imageUrl
+            });
+            await newImage.save();
+        } catch (dbError) {
+            console.error('데이터베이스 저장 오류:', dbError);
+            return res.status(500).json({ message: "데이터베이스 저장 중 오류가 발생했습니다", error: dbError.message });
+        }
 
         return res.status(200).json({ imageUrl });
     } catch (error) {
@@ -64,13 +63,8 @@ router.post('/', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: "파일 업로드 오류", error: error.message });
         }
 
-        if (error.name === 'ValidationError') {
-            return res.status(400).json({ message: "데이터베이스 검증 오류", error: error.message });
-        }
-
         return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
     }
 });
 
 export default router;
-
