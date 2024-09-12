@@ -1,34 +1,76 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
-const path = require('path');
-require('dotenv').config();
+// routes/images.js
+import express from 'express';
+import { S3Client } from '@aws-sdk/client-s3';
+import multer from 'multer';
+import multerS3 from 'multer-s3';
+import dotenv from 'dotenv';
+import Image from '../models/image.js';
 
+dotenv.config();
+
+const router = express.Router();
+
+// AWS S3 설정
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     }
 });
 
-const uploadImageToS3 = async (file) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const fileName = uniqueSuffix + path.extname(file.originalname);
+// Multer 설정
+const upload = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: process.env.AWS_S3_BUCKET_NAME,
+        acl: 'public-read',
+        metadata: (req, file, cb) => {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: (req, file, cb) => {
+            cb(null, `${Date.now()}-${file.originalname}`);
+        }
+    })
+});
 
-    const uploadParams = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: fileName,
-        Body: file.buffer,
-        // ACL 옵션 제거
-    };
-
+// 이미지 업로드 및 URL 생성 API
+router.post('/', upload.single('image'), async (req, res) => {
     try {
-        await s3.send(new PutObjectCommand(uploadParams));
-        const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-        return fileUrl;
-    } catch (err) {
-        console.error('S3 업로드 오류:', err);
-        throw err;
-    }
-};
+        if (!req.file) {
+            return res.status(400).json({ message: "이미지가 없습니다" });
+        }
 
-module.exports = { uploadImageToS3 };
+        const bucketUrl = process.env.AWS_S3_BUCKET_URL;
+        const imageUrl = `${bucketUrl}/${req.file.key}`; // S3에서 업로드된 파일의 URL
+
+        // 데이터베이스에 이미지 정보 저장
+        try {
+            const newImage = new Image({
+                filename: req.file.key,
+                url: imageUrl
+            });
+            await newImage.save();
+        } catch (dbError) {
+            console.error('데이터베이스 저장 오류:', dbError);
+            return res.status(500).json({ message: "데이터베이스 저장 중 오류가 발생했습니다", error: dbError.message });
+        }
+
+        return res.status(200).json({ imageUrl });
+    } catch (error) {
+        console.error('Error occurred:', error);
+
+        if (error instanceof multer.MulterError) {
+            return res.status(400).json({ message: "파일 업로드 오류", error: error.message });
+        }
+
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: "데이터베이스 검증 오류", error: error.message });
+        }
+
+        return res.status(500).json({ message: "서버 오류가 발생했습니다", error: error.message });
+    }
+});
+
+export default router;
+
