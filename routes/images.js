@@ -43,13 +43,18 @@ router.post('/', upload.single('image'), async (req, res) => {
         const bucketUrl = process.env.AWS_S3_BUCKET_URL;
         const imageUrl = `${bucketUrl}/${req.file.key}`; // S3에서 업로드된 파일의 URL
 
-        // 데이터베이스에 이미지 정보 저장
-        const newImage = new Image({
-            filename: req.file.key,
-            url: imageUrl
-        });
-
-        await newImage.save();
+               // 데이터베이스에 이미지 정보 저장
+               try {
+                const newImage = new Image({
+                    filename: req.file.key,
+                    url: imageUrl
+                });
+                await newImage.save();
+            } catch (dbError) {
+                console.error('데이터베이스 저장 오류:', dbError);
+                return res.status(500).json({ message: "데이터베이스 저장 중 오류가 발생했습니다", error: dbError.message });
+            }
+    
 
         return res.status(200).json({ imageUrl });
     } catch (error) {
